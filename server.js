@@ -3,7 +3,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const fs = require("fs");
-const path = require("path");
 const messagesFile = path.join(__dirname, "messages.json");
 
 const app = express();
@@ -67,4 +66,5 @@ function saveMessages(messages) {
 }
 
 let messages = loadMessages();
+
 
