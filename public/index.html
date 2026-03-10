@@ -58,12 +58,14 @@
     });
 
     socket.on("receiveMessage", (msg) => {
-      addMessage(msg);
-    });
-    socket.on("chatHistory", (history) => {
-      history.forEach(msg => addMessage(msg));
+       addMessage(msg);
     });
 
+    socket.on("chatHistory", (history) => {
+       history.forEach(msg => addMessage(msg));
+    });
+
+    
   </script>
 </body>
 </html>
