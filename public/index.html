@@ -65,6 +65,19 @@
        history.forEach(msg => addMessage(msg));
     });
 
+    function addMessage(msg) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `
+    <span class="user" style="color:${msg.color}">${msg.user}:</span>
+    ${msg.text}
+    <span class="time">${msg.time}</span>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+
     
   </script>
 </body>
