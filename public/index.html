@@ -1,20 +1,52 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
   <meta charset="UTF-8">
-  <title>Jednoduchý chat</title>
+  <title>Davidův chat</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 20px auto; }
-    #chat { border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; }
-    .msg { margin-bottom: 8px; }
-    .user { font-weight: bold; margin-right: 5px; }
-    .time { color: #888; font-size: 0.8em; margin-left: 5px; }
-    #inputRow { margin-top: 10px; display: flex; gap: 5px; }
-    #message { flex: 1; }
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    #chat {
+      border: 1px solid #ccc;
+      height: 400px;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .msg {
+      margin-bottom: 8px;
+    }
+
+    .user {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    .time {
+      color: #888;
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
+
+    #inputRow {
+      margin-top: 10px;
+      display: flex;
+      gap: 5px;
+    }
+
+    #message {
+      flex: 1;
+    }
   </style>
 </head>
+
 <body>
-  <h1>Veřejný chat</h1>
+  <h1>Davidův chat</h1>
   <div id="chat"></div>
 
   <div id="inputRow">
@@ -58,27 +90,27 @@
     });
 
     socket.on("receiveMessage", (msg) => {
-       addMessage(msg);
+      addMessage(msg);
     });
 
     socket.on("chatHistory", (history) => {
-       history.forEach(msg => addMessage(msg));
+      history.forEach(msg => addMessage(msg));
     });
 
     function addMessage(msg) {
-  const div = document.createElement("div");
-  div.className = "msg";
-  div.innerHTML = `
+      const div = document.createElement("div");
+      div.className = "msg";
+      div.innerHTML = `
     <span class="user" style="color:${msg.color}">${msg.user}:</span>
-    ${msg.text}
+    <span style="color:${msg.color}">${msg.text}</span>
     <span class="time">${msg.time}</span>
   `;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
 
-    
   </script>
 </body>
+
 </html>
