@@ -61,7 +61,7 @@
       addMessage(msg);
     });
     socket.on("chatHistory", (history) => {
-  history.forEach(msg => addMessage(msg));
+      history.forEach(msg => addMessage(msg));
     });
 
   </script>
