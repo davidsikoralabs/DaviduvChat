@@ -27,8 +27,13 @@ io.on("connection", async (socket) => {
     .order("id", { ascending: true });
 
   if (!error) {
-    socket.emit("chatHistory", history);
-  }
+    socket.emit("chatHistory", history.map(msg => ({
+  user: msg.user,
+  text: msg.text,
+  time: msg.time,
+  color: msg.color
+})));
+
 
   // 2) Uživatel si nastaví jméno
   socket.on("setName", (name) => {
@@ -71,5 +76,6 @@ function getColorForUser(name) {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log("Server běží na portu", PORT));
+
 
 
