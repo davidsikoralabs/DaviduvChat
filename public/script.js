@@ -32,7 +32,7 @@ socket.on("chatHistory", (messages) => {
   messages.forEach(addMessage);
 });
 
-// přijetí nové zprávy
+// přijetí nové zprávy.
 socket.on("receiveMessage", (msg) => {
   addMessage(msg);
 });
