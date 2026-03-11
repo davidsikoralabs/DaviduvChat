@@ -59,7 +59,7 @@ io.on("connection", async (socket) => {
   });
 });
 
-// Jednoduchá funkce pro barvu uživatele
+// Jednoduchá funkce pro barvu uživatele....
 function getColorForUser(name) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -71,3 +71,5 @@ function getColorForUser(name) {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log("Server běží na portu", PORT));
+
+
