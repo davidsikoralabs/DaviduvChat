@@ -69,14 +69,6 @@
     const input = document.getElementById("message");
     const sendBtn = document.getElementById("send");
 
-    function addMessage(msg) {
-      const div = document.createElement("div");
-      div.className = "msg";
-      div.innerHTML = `<span class="user">${msg.user}:</span> ${msg.text} <span class="time">${msg.time}</span>`;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
     sendBtn.addEventListener("click", () => {
       const text = input.value.trim();
       if (!text) return;
@@ -98,19 +90,21 @@
     });
 
     function addMessage(msg) {
-      const div = document.createElement("div");
-      div.className = "msg";
-      div.innerHTML = `
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `
     <span class="user" style="color:${msg.color}">${msg.user}:</span>
     <span style="color:${msg.color}">${msg.text}</span>
     <span class="time">${msg.time}</span>
   `;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
 
 
   </script>
 </body>
+
 
 </html>
