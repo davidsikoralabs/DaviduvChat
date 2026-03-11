@@ -1,80 +1,73 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
-const fs = require("fs");
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-const messagesFile = path.join(__dirname, "messages.json");
-
-function loadMessages() {
-  try {
-    const data = fs.readFileSync(messagesFile, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    console.error("Chyba při načítání messages.json:", err);
-    return [];
-  }
-}
-
-function saveMessages(messages) {
-  try {
-    fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
-  } catch (err) {
-    console.error("Chyba při ukládání messages.json:", err);
-  }
-}
-
-function getRandomColor() {
-  const colors = [
-    "#e6194b", "#3cb44b", "#ffe119", "#383434",
-    "#f58231", "#911eb4", "#46f0f0", "#72013d",
-    "#bcf60c", "#f5500e", "#008080", "#e300f7",
-    "#9a6324", "#8b0000", "#ff0707", "#13f055",
-    "#808000", "#3d43f3", "#000075", "#808080"
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
-let messages = loadMessages();
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
-io.on("connection", (socket) => {
-  console.log("Uživatel se připojil");
+app.use(express.static("public"));
 
-  socket.emit("chatHistory", messages);
+io.on("connection", async (socket) => {
+  console.log("Uživatel připojen");
 
+  // 1) Po připojení pošli historii z databáze
+  const { data: history, error } = await supabase
+    .from("messages")
+    .select("*")
+    .order("id", { ascending: true });
+
+  if (!error) {
+    socket.emit("chatHistory", history);
+  }
+
+  // 2) Uživatel si nastaví jméno
   socket.on("setName", (name) => {
-    socket.username = name || "Anonym";
-    socket.color = getRandomColor();
+    socket.data.username = name;
   });
 
-  socket.on("sendMessage", (text) => {
-    if (!socket.username) socket.username = "Anonym";
-
+  // 3) Když přijde zpráva
+  socket.on("sendMessage", async (text) => {
     const msg = {
-      user: socket.username,
+      user: socket.data.username,
       text,
-      time: new Date().toLocaleTimeString(),
-      color: socket.color
+      time: new Date().toLocaleTimeString("cs-CZ"),
+      color: getColorForUser(socket.data.username)
     };
 
-    messages.push(msg);
-    saveMessages(messages);
+    // 3a) Uložit do databáze
+    const { error: insertError } = await supabase
+      .from("messages")
+      .insert(msg);
 
+    if (insertError) {
+      console.error("Chyba při ukládání:", insertError);
+      return;
+    }
+
+    // 3b) Poslat ostatním
     io.emit("receiveMessage", msg);
   });
-
-  socket.on("disconnect", () => {
-    console.log("Uživatel se odpojil");
-  });
 });
 
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`Server běží na http://localhost:${PORT}`);
-});
+// Jednoduchá funkce pro barvu uživatele
+function getColorForUser(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 50%)`;
+}
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log("Server běží na portu", PORT));
