@@ -1,0 +1,31 @@
+.chat-wrapper {
+  max-width: 600px;      /* šířka chatu */
+  margin: 0 auto;        /* centrování */
+  padding: 20px;         /* aby to dýchalo */
+}
+
+@media (max-width: 600px) {
+  body {
+    font-size: 18px; /* větší základní text */
+  }
+
+  .message {
+    font-size: 17px;
+    padding: 10px 14px;
+  }
+
+  #messageInput {
+    font-size: 18px;
+    padding: 14px;
+  }
+
+  #sendButton {
+    font-size: 18px;
+    padding: 14px 18px;
+  }
+
+  .chat-wrapper {
+    padding: 10px;
+    max-width: 100%; /* na mobilu přes celou šířku */
+  }
+}
