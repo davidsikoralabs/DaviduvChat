@@ -3,7 +3,7 @@ const socket = io();
 const chat = document.getElementById("chat");
 const nameInput = document.getElementById("name");
 const messageInput = document.getElementById("message");
-const sendBtn = document.getElementById("sendBtn");
+const sendBtn = document.getElementById("sendButton");
 
 // po připojení pošleme jméno (když ho uživatel zadá)
 nameInput.addEventListener("change", () => {
