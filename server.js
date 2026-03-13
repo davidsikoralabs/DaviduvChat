@@ -3,12 +3,21 @@ import http from "http";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import cors from "cors";
+app.use(cors());
+
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
