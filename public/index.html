@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: system-ui, sans-serif; background:#111; color:#eee; margin:0; display:flex; flex-direction:column; height:100vh; }
+    body { font-family: system-ui, sans-serif; background:#7d7b90; color:#eee; margin:0; display:flex; flex-direction:column; height:100vh; }
     #chat { flex:1; overflow-y:auto; padding:16px; }
     .msg { margin-bottom:6px; }
     .user { font-weight:bold; margin-right:4px; }
@@ -16,14 +17,15 @@
   </style>
 </head>
 <body>
+  <div class="chat-wrapper">
   <div id="chat"></div>
 
-  <div id="inputBar">
-    <input id="name" type="text" placeholder="Tvoje jméno" />
-    <input id="message" type="text" placeholder="Napiš zprávu..." />
-    <button id="sendBtn">Poslat</button>
+    <div id="inputBar">
+      <input id="name" type="text" placeholder="Tvoje jméno" />
+      <input id="message" type="text" placeholder="Napiš zprávu..." />
+      <button id="sendBtn">Poslat</button>
+    </div>
   </div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
