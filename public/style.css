@@ -47,7 +47,7 @@ body {
 
 .time {
   font-size: 0.75rem;
-  color: #bbb;
+  color: #ffffff;
   margin-left: 6px;
 }
 
@@ -104,13 +104,13 @@ button:hover {
   }
 
   .msg {
-    font-size: 18px;
+    font-size: 25px;
     padding: 12px 16px;
   }
 
   #name,
   #message {
-    font-size: 20px;
+    font-size: 35px;
     padding: 14px;
   }
 
