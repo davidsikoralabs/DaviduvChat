@@ -6,7 +6,7 @@
 
 @media (max-width: 600px) {
   body {
-    font-size: 25px; /* větší základní text */
+    font-size: 50px; /* větší základní text */
   }
 
   .message {
