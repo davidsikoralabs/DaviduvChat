@@ -20,7 +20,7 @@ app.use(express.static("public"));
 io.on("connection", async (socket) => {
   console.log("Uživatel připojen");
 
-  // 1) Po připojení pošli historii z databáze
+  // 1) Po připojení pošli historii z databáze.
   try {
     const { data: history, error } = await supabase
       .from("messages")
