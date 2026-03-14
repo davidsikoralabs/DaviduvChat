@@ -67,14 +67,16 @@ button:hover {
 }
 
 .deleteRoom {
+  width: auto !important;
+  padding: 0 6px;
+  margin-left: auto;
   background: transparent;
   border: none;
   color: #ff6b6b;
   font-size: 20px;
   cursor: pointer;
-  padding: 0 6px;
-  margin-left: auto;
 }
+
 
 .deleteRoom:hover {
   color: #ff3b3b;
