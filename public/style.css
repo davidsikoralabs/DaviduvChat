@@ -32,7 +32,7 @@ body {
 /* Jednotlivé zprávy */
 .msg {
   margin-bottom: 12px;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 0;
   background: #2d2d44;
   border-radius: 8px;
   max-width: 85%;
