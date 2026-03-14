@@ -2,23 +2,30 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Výběr místnosti</title>
+
   <link rel="stylesheet" href="index.css">
 </head>
+
 <body>
 
-  <h1>Chat – výběr místnosti</h1>
+  <div class="page-wrapper">
 
-  <label>Vaše jméno:</label><br>
-  <input id="username" type="text" placeholder="Zadejte jméno"><br><br>
+    <h1 style="text-align:center; margin-bottom: 20px;">Chat – výběr místnosti</h1>
 
-  <h2>Místnosti</h2>
-  <div id="rooms"></div>
+    <label>Vaše jméno:</label>
+    <input id="username" type="text" placeholder="Zadejte jméno">
 
-  <h3>Vytvořit novou místnost</h3>
-  <input id="newRoomName" type="text" placeholder="Název místnosti">
-  <input id="adminPassword" type="password" placeholder="Admin heslo">
-  <button id="createRoomBtn">Vytvořit</button>
+    <h2>Místnosti</h2>
+    <div id="rooms"></div>
+
+    <h3>Vytvořit novou místnost</h3>
+    <input id="newRoomName" type="text" placeholder="Název místnosti">
+    <input id="adminPassword" type="password" placeholder="Admin heslo">
+    <button id="createRoomBtn">Vytvořit</button>
+
+  </div>
 
   <script>
     async function loadRooms() {

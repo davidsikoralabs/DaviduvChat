@@ -57,7 +57,6 @@ button:hover {
   background: #8e7ffb;
 }
 
-/* Mobilní verze */
 @media (max-width: 900px) {
   body {
     padding: 0;
