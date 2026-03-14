@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // kvůli POST/DELETE JSONu
+app.use(express.json()); 
 
 const server = http.createServer(app);
 
@@ -27,7 +27,7 @@ const supabase = createClient(
 
 // 🔹 jednoduchý seznam místností v paměti
 let rooms = [
-  { id: "general", name: "Chatovací místnost 1" }
+  { id: "Hlavní chat", name: "Hlavní chat" }
 ];
 
 app.use(express.static("public"));
