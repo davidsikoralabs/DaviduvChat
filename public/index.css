@@ -62,7 +62,6 @@ button:hover {
 }
 
 .deleteRoom {
-  float: right;
   background: transparent;
   border: none;
   color: #ff6b6b;
