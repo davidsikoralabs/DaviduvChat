@@ -5,23 +5,7 @@ const nameInput = document.getElementById("name");
 const messageInput = document.getElementById("message");
 const sendBtn = document.getElementById("sendButton");
 
-// po připojení pošleme jméno (když ho uživatel zadá)
 let nameLocked = false;
-
-function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
-
-  if (!nameLocked) {
-    socket.emit("setName", nameInput.value.trim() || "Anonym");
-    nameInput.disabled = true;   // zamkne input
-    nameLocked = true;
-  }
-
-  socket.emit("sendMessage", text);
-  messageInput.value = "";
-}
-
 
 // odeslání zprávy
 sendBtn.addEventListener("click", sendMessage);
@@ -33,8 +17,13 @@ function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
 
-  // zajistíme, že jméno je nastavené
-  socket.emit("setName", nameInput.value.trim() || "Anonym");
+  // nastavíme jméno jen jednou
+  if (!nameLocked) {
+    socket.emit("setName", nameInput.value.trim() || "Anonym");
+    nameInput.disabled = true;
+    nameLocked = true;
+  }
+
   socket.emit("sendMessage", text);
   messageInput.value = "";
 }
@@ -45,7 +34,7 @@ socket.on("chatHistory", (messages) => {
   messages.forEach(addMessage);
 });
 
-// přijetí nové zprávy.
+// přijetí nové zprávy
 socket.on("receiveMessage", (msg) => {
   addMessage(msg);
 });
