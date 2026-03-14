@@ -1,13 +1,4 @@
 /* ====== DESKTOP LAYOUT ====== */
-
-h1 {
-  font-family: Impact;
-  color: #f9f457;
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-}
-
 body {
   font-family: system-ui, sans-serif;
   background: #7d7b90;
