@@ -1,5 +1,13 @@
 /* ====== DESKTOP LAYOUT ====== */
 
+h1 {
+  font-family: Impact;
+  color: #f9f457;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
 body {
   font-family: system-ui, sans-serif;
   background: #7d7b90;
@@ -116,7 +124,12 @@ button:hover {
   }
 
   #name,
-  #message,
+  #message {
+    width: 100%;
+    font-size: 20px;
+    padding: 12px;
+  }
+
   #sendButton {
     width: 100%;
     font-size: 20px;
