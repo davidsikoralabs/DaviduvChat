@@ -4,24 +4,19 @@
   <meta charset="UTF-8">
   <title>Chatovací místnost</title>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- socket.io -->
   <script src="https://daviduvchat.onrender.com/socket.io/socket.io.js"></script>
-
-  <!-- JS -->
   <script defer src="room.js"></script>
 </head>
 <body>
 
   <div class="chat-wrapper">
 
-    <!-- Nadpis + počet lidí -->
-    <h1 id="roomTitle" style="text-align:center; padding: 10px 0; margin:0;">Místnost</h1>
-    <p id="onlineCount" style="text-align:center; margin:0 0 10px 0;">Online: 0</p>
+    <h1 id="roomTitle" style="text-align:center; margin: 10px 0 0 0;">Místnost</h1>
+    <p id="onlineCount" style="text-align:center; margin: 0 0 10px 0;">Online: 0</p>
 
-    <!-- Chat okno -->
+    <!-- Chat okno (musí být #chat, ne #messages) -->
     <div id="chat"></div>
 
     <!-- Input bar -->

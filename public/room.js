@@ -46,7 +46,7 @@ function sendMessage() {
   input.value = "";
 }
 
-// VYKRESLENÍ ZPRÁVY (kompatibilní s tvým CSS)
+// VYKRESLENÍ ZPRÁVY
 function addMessage(msg) {
   const chat = document.getElementById("chat");
 
