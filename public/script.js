@@ -6,9 +6,22 @@ const messageInput = document.getElementById("message");
 const sendBtn = document.getElementById("sendButton");
 
 // po připojení pošleme jméno (když ho uživatel zadá)
-nameInput.addEventListener("change", () => {
-  socket.emit("setName", nameInput.value.trim());
-});
+let nameLocked = false;
+
+function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text) return;
+
+  if (!nameLocked) {
+    socket.emit("setName", nameInput.value.trim() || "Anonym");
+    nameInput.disabled = true;   // zamkne input
+    nameLocked = true;
+  }
+
+  socket.emit("sendMessage", text);
+  messageInput.value = "";
+}
+
 
 // odeslání zprávy
 sendBtn.addEventListener("click", sendMessage);
