@@ -55,9 +55,10 @@ function addMessage(msg) {
 
   div.innerHTML = `
     <span class="user" style="color:${msg.color}">${msg.user}</span>
-    ${msg.text}
+    <span class="text" style="color:${msg.color}">${msg.text}</span>
     <span class="time">(${msg.time})</span>
   `;
+
 
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
