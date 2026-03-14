@@ -104,7 +104,7 @@ button:hover {
   }
 
   .msg {
-    font-size: 25px;
+    font-size: 20px;
     padding: 12px 16px;
   }
 
@@ -116,10 +116,11 @@ button:hover {
   }
 
   #name,
-  #message,#sendButton {
+  #message,
+  #sendButton {
     width: 100%;
     font-size: 20px;
-    padding: 16px;
+    padding: 12px;
   }
 
 }
