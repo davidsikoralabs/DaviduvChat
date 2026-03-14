@@ -58,7 +58,6 @@ io.on("connection", async (socket) => {
     socket.data.username = name || "Anonym";
   });
 
-  nameInput.parentElement.removeChild(nameInput);
 
   // 3) Když přijde zpráva
   socket.on("sendMessage", async (text) => {
