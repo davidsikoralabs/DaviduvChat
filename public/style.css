@@ -104,28 +104,22 @@ button:hover {
   }
 
   .msg {
-    font-size: 35px;
+    font-size: 25px;
     padding: 12px 16px;
   }
 
   /* Input bar */
   #inputBar {
-    display: flex;
+    flex-direction: column;
     padding: 20px;
     gap: 12px;
   }
 
   #name,
-  #message {
-    display: flex;
+  #message,#sendButton {
+    width: 100%;
     font-size: 20px;
-    padding: 16px 18px;
-  }
-
-  #sendButton {
-    display: flex;
-    font-size: 20px;
-    padding: 16px 22px;
+    padding: 16px;
   }
 
 }
