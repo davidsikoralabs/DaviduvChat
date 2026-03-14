@@ -32,13 +32,13 @@ socket.on("roomUserCount", ({ roomId: id, count }) => {
 });
 
 // ODESLÁNÍ
-document.getElementById("sendBtn").onclick = sendMessage;
-document.getElementById("messageInput").addEventListener("keydown", (e) => {
+document.getElementById("sendButton").onclick = sendMessage;
+document.getElementById("message").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
 function sendMessage() {
-  const input = document.getElementById("messageInput");
+  const input = document.getElementById("message");
   const text = input.value.trim();
   if (!text) return;
 
