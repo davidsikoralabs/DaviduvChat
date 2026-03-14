@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatovací místnost</title>
+  <script src="https://daviduvchat.onrender.com/socket.io/socket.io.js"></script>
+  <script defer src="room.js"></script>
+</head>
+<body>
+
+  <h1 id="roomTitle">Místnost</h1>
+  <p id="onlineCount">Online: 0</p>
+
+  <div id="messages"></div>
+
+  <input id="messageInput" type="text" placeholder="Napište zprávu...">
+  <button id="sendBtn">Odeslat</button>
+
+</body>
+</html>

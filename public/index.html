@@ -1,28 +1,86 @@
 <!DOCTYPE html>
 <html lang="cs">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  <link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <title>Výběr místnosti</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .room { padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; cursor: pointer; }
+    .room:hover { background: #f0f0f0; }
+  </style>
 </head>
-
 <body>
-  <div class="chat-wrapper">
-    <!-- celý chat -->
-    <div id="chat"></div>
 
-    <div id="inputBar">
-      <input id="name" placeholder="Jméno">
-      <input id="message" placeholder="Zpráva">
-      <button id="sendButton">Send</button>
-    </div>
-  </div>
+  <h1>Chat – výběr místnosti</h1>
 
-  <script src="https://daviduvchat.onrender.com/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <label>Vaše jméno:</label><br>
+  <input id="username" type="text" placeholder="Zadejte jméno"><br><br>
+
+  <h2>Místnosti</h2>
+  <div id="rooms"></div>
+
+  <h3>Vytvořit novou místnost</h3>
+  <input id="newRoomName" type="text" placeholder="Název místnosti">
+  <input id="adminPassword" type="password" placeholder="Admin heslo">
+  <button id="createRoomBtn">Vytvořit</button>
+
+  <script>
+    async function loadRooms() {
+      const res = await fetch("/api/rooms");
+      const rooms = await res.json();
+
+      const container = document.getElementById("rooms");
+      container.innerHTML = "";
+
+      rooms.forEach(room => {
+        const div = document.createElement("div");
+        div.className = "room";
+        div.textContent = room.name + " (" + room.users + " online)";
+        div.onclick = () => enterRoom(room.id);
+        container.appendChild(div);
+      });
+    }
+
+    function enterRoom(roomId) {
+      const username = document.getElementById("username").value.trim();
+      if (!username) {
+        alert("Zadejte jméno!");
+        return;
+      }
+
+      localStorage.setItem("username", username);
+      localStorage.setItem("roomId", roomId);
+
+      window.location.href = "/room.html";
+    }
+
+    document.getElementById("createRoomBtn").onclick = async () => {
+      const name = document.getElementById("newRoomName").value.trim();
+      const password = document.getElementById("adminPassword").value.trim();
+
+      if (!name || !password) {
+        alert("Vyplňte název i heslo!");
+        return;
+      }
+
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, password })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert("Místnost vytvořena!");
+        loadRooms();
+      }
+    };
+
+    loadRooms();
+  </script>
+
 </body>
-
 </html>
