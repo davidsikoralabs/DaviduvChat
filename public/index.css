@@ -61,6 +61,10 @@ button:hover {
   background: #8e7ffb;
 }
 
+.roomName {
+  flex-grow: 1; 
+}
+
 .deleteRoom {
   background: transparent;
   border: none;
@@ -68,6 +72,7 @@ button:hover {
   font-size: 20px;
   cursor: pointer;
   padding: 0 6px;
+  margin-left: auto;
 }
 
 .deleteRoom:hover {
