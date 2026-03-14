@@ -110,21 +110,19 @@ button:hover {
 
   /* Input bar */
   #inputBar {
-    display: flex;
-    padding: 15px;
-    gap: 15px;
-    background: #141421;
-    border-top: 1px solid #333;
+    padding: 16px;
+    gap: 12px;
   }
-  
+
   #name,
   #message {
-    font-size: 50px;
-    padding: 20px;
+    font-size: 22px;
+    padding: 16px 18px;
   }
 
   #sendButton {
-    font-size: 30px;
-    padding: 14px 18px;
+    font-size: 22px;
+    padding: 16px 22px;
   }
+  
 }
