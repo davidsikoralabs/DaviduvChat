@@ -3,19 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <title>Chatovací místnost</title>
-  <script src="https://daviduvchat.onrender.com/socket.io/socket.io.js"></script>
-  <script defer src="room.js"></script>
+
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- socket.io -->
+  <script src="https://daviduvchat.onrender.com/socket.io/socket.io.js"></script>
+
+  <!-- JS -->
+  <script defer src="room.js"></script>
 </head>
 <body>
 
-  <h1 id="roomTitle">Místnost</h1>
-  <p id="onlineCount">Online: 0</p>
+  <div class="chat-wrapper">
 
-  <div id="messages"></div>
+    <!-- Nadpis + počet lidí -->
+    <h1 id="roomTitle" style="text-align:center; padding: 10px 0; margin:0;">Místnost</h1>
+    <p id="onlineCount" style="text-align:center; margin:0 0 10px 0;">Online: 0</p>
 
-  <input id="messageInput" type="text" placeholder="Napište zprávu...">
-  <button id="sendBtn">Odeslat</button>
+    <!-- Chat okno -->
+    <div id="chat"></div>
+
+    <!-- Input bar -->
+    <div id="inputBar">
+      <input id="messageInput" type="text" placeholder="Napište zprávu...">
+      <button id="sendBtn">Odeslat</button>
+    </div>
+
+  </div>
 
 </body>
 </html>
