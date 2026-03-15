@@ -12,7 +12,6 @@ app.use(cors());
 app.use(express.json()); 
 
 const server = http.createServer(app);
-loadRoomsFromDB();
 
 const io = new Server(server, {
   cors: {
@@ -50,6 +49,7 @@ async function loadRoomsFromDB() {
   console.log("Načtené místnosti:", rooms);
 }
 
+loadRoomsFromDB();
 
 app.use(express.static("public"));
 
