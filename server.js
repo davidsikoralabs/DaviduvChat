@@ -66,7 +66,7 @@ app.get("/api/rooms", (req, res) => {
 });
 
 // vytvoření místnosti (jen admin)
-app.post("/api/rooms", (req, res) => {
+app.post("/api/rooms", async (req, res) => {
   const { name, password } = req.body;
 
   if (password !== process.env.ADMIN_PASSWORD) {
@@ -77,18 +77,29 @@ app.post("/api/rooms", (req, res) => {
     return res.status(400).json({ error: "Název místnosti je povinný" });
   }
 
-  const id = name.trim().toLowerCase().replace(/\s+/g, "-"); // jednoduché ID
+  const id = name.trim().toLowerCase().replace(/\s+/g, "-");
+
   if (rooms.find((r) => r.id === id)) {
     return res.status(400).json({ error: "Místnost už existuje" });
   }
 
   const room = { id, name: name.trim() };
+
+  // 🔥 ULOŽIT DO SUPABASE
+  const { error } = await supabase.from("rooms").insert(room);
+
+  if (error) {
+    console.error("Chyba při ukládání místnosti:", error);
+    return res.status(500).json({ error: "Nepodařilo se uložit místnost" });
+  }
+
   rooms.push(room);
   res.json(room);
 });
 
+
 // smazání místnosti (jen admin)
-app.delete("/api/rooms/:id", (req, res) => {
+app.delete("/api/rooms/:id", async (req, res) => {
   const { password } = req.body;
   const { id } = req.params;
 
@@ -96,9 +107,9 @@ app.delete("/api/rooms/:id", (req, res) => {
     return res.status(401).json({ error: "Neplatné heslo" });
   }
 
-  rooms = rooms.filter((r) => r.id !== id);
-  // zprávy v Supabase zatím nemažeme – jen se k nim už nebude přistupovat
-  res.json({ success: true });
+  await supabase.from("rooms").delete().eq("id", id);
+    rooms = rooms.filter((r) => r.id !== id);
+    res.json({ success: true });
 });
 
 /* ========== SOCKET.IO ========== */
