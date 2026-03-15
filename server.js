@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json()); 
 
 const server = http.createServer(app);
+loadRoomsFromDB();
 
 const io = new Server(server, {
   cors: {
@@ -25,10 +26,30 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// 🔹 jednoduchý seznam místností v paměti
-let rooms = [
-  { id: "Hlavní chat", name: "Hlavní chat" }
-];
+let rooms = [];
+
+async function loadRoomsFromDB() {
+  const { data, error } = await supabase
+    .from("rooms")
+    .select("*");
+
+  if (error) {
+    console.error("Chyba při načítání místností:", error);
+    return;
+  }
+
+  rooms = data;
+
+  // Pokud v DB není hlavní místnost, vytvoříme ji
+  if (!rooms.find(r => r.id === "hlavni-chat")) {
+    const mainRoom = { id: "hlavni-chat", name: "Hlavní chat" };
+    rooms.push(mainRoom);
+    await supabase.from("rooms").insert(mainRoom);
+  }
+
+  console.log("Načtené místnosti:", rooms);
+}
+
 
 app.use(express.static("public"));
 
