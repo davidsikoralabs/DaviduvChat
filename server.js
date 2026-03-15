@@ -25,6 +25,9 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
+console.log("SUPABASE URL:", process.env.SUPABASE_URL);
+console.log("SUPABASE KEY:", process.env.SUPABASE_ANON_KEY?.slice(0, 15) + "...");
+
 let rooms = [];
 
 async function loadRoomsFromDB() {
