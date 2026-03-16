@@ -23,7 +23,7 @@ body {
   width: 100%;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 12px 0;
   background: #2d2d44;
   border-radius: 8px;
   margin-bottom: 10px;
@@ -40,7 +40,7 @@ input {
   padding: 12px 0 12px 0;
   border-radius: 6px;
   border: 1px solid #444;
-  background: #000;
+  background: #000000;
   color: #eee;
   margin-bottom: 12px;
   font-size: 16px;
@@ -96,7 +96,7 @@ button:hover {
 
   .room {
     font-size: 20px;
-    padding: 16px;
+    padding: 16px 0;
   }
 
   input, button {
