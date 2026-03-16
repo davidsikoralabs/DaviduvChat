@@ -121,50 +121,50 @@ io.on("connection", async (socket) => {
   console.log("Uživatel připojen");
 
   // klient po připojení pošle jméno + místnost
-  socket.on("joinRoom", async ({ username, roomId }) => {
-    const room = rooms.find((r) => r.id === roomId);
-    if (!room) {
-      socket.emit("errorMessage", "Místnost neexistuje");
-      return;
-    }
+socket.on("joinRoom", async ({ username, roomId }) => {
+  const room = rooms.find((r) => r.id === roomId);
+  if (!room) {
+    socket.emit("errorMessage", "Místnost neexistuje");
+    return;
+  }
 
-    socket.data.username = username || "Anonym";
-    socket.data.roomId = roomId;
+  socket.data.username = username || "Anonym";
+  socket.data.roomId = roomId;
 
-    socket.join(roomId);
+  // 1) Nejdřív načteme historii
+  try {
+    const { data: history } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("room", roomId)
+      .order("id", { ascending: true });
 
-    io.to(roomId).emit("receiveMessage", {
-      system: true,
-      text: `${username} se připojil do místnosti`
-    });
+    const cleaned = history.map((msg) => ({
+      user: msg.user,
+      text: msg.text,
+      time: msg.time,
+      color: msg.color
+    }));
 
+    // pošleme historii jen tomu, kdo se připojuje
+    socket.emit("chatHistory", cleaned);
 
-    // načti historii jen pro danou místnost
-    try {
-      const { data: history, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("room", roomId)
-        .order("id", { ascending: true });
+  } catch (err) {
+    console.error("Chyba při načítání historie:", err);
+  }
 
-      if (error) {
-        console.error("Chyba při načítání historie:", error);
-      } else {
-        const cleaned = history.map((msg) => ({
-          user: msg.user,
-          text: msg.text,
-          time: msg.time,
-          color: msg.color
-        }));
-        socket.emit("chatHistory", cleaned);
-      }
-    } catch (err) {
-      console.error("Výjimka při načítání historie:", err);
-    }
+  // 2) Teprve teď připojíme socket do místnosti
+  socket.join(roomId);
 
-    // po připojení aktualizuj počty uživatelů
-    updateRoomUserCount(roomId);
+  // 3) A teď pošleme systémovou zprávu všem ostatním
+  socket.to(roomId).emit("receiveMessage", {
+    system: true,
+    text: `${socket.data.username} se připojil do místnosti`
   });
+
+  updateRoomUserCount(roomId);
+});
+
 
   // příjem zprávy
   socket.on("sendMessage", async (text) => {
@@ -196,22 +196,20 @@ io.on("connection", async (socket) => {
     io.to(roomId).emit("receiveMessage", msg);
   });
 
-  socket.on("disconnect", () => {
-    const roomId = socket.data.roomId;
-    if (roomId) {
-      updateRoomUserCount(roomId);
-    }
-    console.log("Uživatel odpojen");
-    const username = socket.data.username;
+socket.on("disconnect", () => {
+  const username = socket.data.username;
+  const roomId = socket.data.roomId;
 
-    if (username && roomId) {
-      io.to(roomId).emit("receiveMessage", {
-        system: true,
-        text: `${username} opustil místnost`
-      });
-    }
+  if (username && roomId) {
+    socket.to(roomId).emit("receiveMessage", {
+      system: true,
+      text: `${username} opustil místnost`
+    });
+  }
 
-  });
+  updateRoomUserCount(roomId);
+});
+
 });
 
 // barva podle jména
