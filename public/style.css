@@ -88,6 +88,14 @@ button:hover {
   background: #8e7ffb;
 }
 
+.system {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+
 /* ====== MOBILNÍ VERZE ====== */
 
 @media (max-width: 600px) {

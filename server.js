@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 
 const server = http.createServer(app);
 
@@ -111,8 +111,8 @@ app.delete("/api/rooms/:id", async (req, res) => {
   }
 
   await supabase.from("rooms").delete().eq("id", id);
-    rooms = rooms.filter((r) => r.id !== id);
-    res.json({ success: true });
+  rooms = rooms.filter((r) => r.id !== id);
+  res.json({ success: true });
 });
 
 /* ========== SOCKET.IO ========== */
@@ -132,6 +132,12 @@ io.on("connection", async (socket) => {
     socket.data.roomId = roomId;
 
     socket.join(roomId);
+
+    io.to(roomId).emit("receiveMessage", {
+      system: true,
+      text: `${username} se připojil do místnosti`
+    });
+
 
     // načti historii jen pro danou místnost
     try {
@@ -196,6 +202,15 @@ io.on("connection", async (socket) => {
       updateRoomUserCount(roomId);
     }
     console.log("Uživatel odpojen");
+    const username = socket.data.username;
+
+    if (username && roomId) {
+      io.to(roomId).emit("receiveMessage", {
+        system: true,
+        text: `${username} opustil místnost`
+      });
+    }
+
   });
 });
 

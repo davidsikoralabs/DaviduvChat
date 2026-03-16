@@ -24,6 +24,7 @@ socket.on("receiveMessage", (msg) => {
   addMessage(msg);
 });
 
+
 // ONLINE COUNT
 socket.on("roomUserCount", ({ roomId: id, count }) => {
   if (id === roomId) {
@@ -61,4 +62,10 @@ function addMessage(msg) {
 
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+}
+
+if (msg.system) {
+  chat.innerHTML += `<div class="system">${msg.text}</div>`;
+} else {
+  // tvoje normální zpráva
 }
