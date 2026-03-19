@@ -88,6 +88,17 @@ button:hover {
   background: #8e7ffb;
 }
 
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #ff6b6b;
+  font-size: 18px;
+  cursor: pointer;
+  float: right;
+  margin-left: 8px;
+}
+
+
 .system {
   text-align: center;
   color: #aaa;
