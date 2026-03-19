@@ -21,23 +21,10 @@ socket.on("chatHistory", (messages) => {
 
 // NOVÁ ZPRÁVA
 socket.on("receiveMessage", (msg) => {
-  const div = document.createElement("div");
-  div.classList.add("msg");
-  div.dataset.id = msg.id; 
-
-  let html = `
-    <span class="user" style="color:${msg.color}">${msg.user}</span>
-    ${msg.text}
-    <span class="time">${msg.time}</span>
-  `;
-
-  // 🔥 Tady přidáme tlačítko Smazat
+  addMessage(msg);
   if (msg.user === currentUsername) {
     html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
   }
-
-  div.innerHTML = html;
-  chat.appendChild(div);
 });
 
 
