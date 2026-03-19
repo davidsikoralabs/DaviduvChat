@@ -121,80 +121,86 @@ io.on("connection", async (socket) => {
   console.log("Uživatel připojen");
 
   // klient po připojení pošle jméno + místnost
-socket.on("joinRoom", async ({ username, roomId }) => {
-  const room = rooms.find((r) => r.id === roomId);
-  if (!room) {
-    socket.emit("errorMessage", "Místnost neexistuje");
-    return;
-  }
-
-  socket.data.username = username || "Anonym";
-  socket.data.roomId = roomId;
-
-  // 1) Nejdřív načteme historii
-  try {
-    const { data: history } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("room", roomId)
-      .order("id", { ascending: true });
-
-    const cleaned = history.map((msg) => ({
-      user: msg.user,
-      text: msg.text,
-      time: msg.time,
-      color: msg.color
-    }));
-
-    // pošleme historii jen tomu, kdo se připojuje
-    socket.emit("chatHistory", cleaned);
-
-  } catch (err) {
-    console.error("Chyba při načítání historie:", err);
-  }
-
-  // 2) Teprve teď připojíme socket do místnosti
-  socket.join(roomId);
-
-  // 3) A teď pošleme systémovou zprávu všem ostatním
-  socket.to(roomId).emit("receiveMessage", {
-    system: true,
-    text: `${socket.data.username} se připojil do místnosti`
-  });
-
-  updateRoomUserCount(roomId);
-});
-
-
-  // příjem zprávy
-  socket.on("sendMessage", async (text) => {
-    const username = socket.data.username || "Anonym";
-    const roomId = socket.data.roomId || "general";
-
-    const msg = {
-      user: username,
-      text,
-      time: new Date().toLocaleTimeString("cs-CZ"),
-      color: getColorForUser(username),
-      room: roomId
-    };
-
-    try {
-      const { error: insertError } = await supabase
-        .from("messages")
-        .insert(msg);
-
-      if (insertError) {
-        console.error("Chyba při ukládání zprávy:", insertError);
-        return;
-      }
-    } catch (err) {
-      console.error("Výjimka při ukládání zprávy:", err);
+  socket.on("joinRoom", async ({ username, roomId }) => {
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room) {
+      socket.emit("errorMessage", "Místnost neexistuje");
       return;
     }
 
-    io.to(roomId).emit("receiveMessage", msg);
+    socket.data.username = username || "Anonym";
+    socket.data.roomId = roomId;
+
+    // 1) Nejdřív načteme historii
+    try {
+      const { data: history } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("room", roomId)
+        .order("id", { ascending: true });
+
+      const cleaned = history.map((msg) => ({
+        id: msg.id,
+        user: msg.user,
+        text: msg.text,
+        time: msg.time,
+        color: msg.color
+      }));
+
+      // pošleme historii jen tomu, kdo se připojuje
+      socket.emit("chatHistory", cleaned);
+
+    } catch (err) {
+      console.error("Chyba při načítání historie:", err);
+    }
+
+    // 2) Teprve teď připojíme socket do místnosti
+    socket.join(roomId);
+
+    // 3) A teď pošleme systémovou zprávu všem ostatním
+    socket.to(roomId).emit("receiveMessage", {
+      system: true,
+      text: `${socket.data.username} se připojil do místnosti`
+    });
+
+    updateRoomUserCount(roomId);
   });
+
+
+  // příjem zprávy
+socket.on("sendMessage", async (text) => {
+  const username = socket.data.username || "Anonym";
+  const roomId = socket.data.roomId || "general";
+
+  const msg = {
+    user: username,
+    text,
+    time: new Date().toLocaleTimeString("cs-CZ"),
+    color: getColorForUser(username),
+    room: roomId
+  };
+
+  try {
+    // vložíme zprávu a necháme si vrátit vložený řádek (včetně ID)
+    const { data, error: insertError } = await supabase
+      .from("messages")
+      .insert(msg)
+      .select(); 
+
+    if (insertError) {
+      console.error("Chyba při ukládání zprávy:", insertError);
+      return;
+    }
+
+    const saved = data && data[0] ? data[0] : msg;
+
+    io.to(roomId).emit("receiveMessage", saved);
+
+  } catch (err) {
+    console.error("Výjimka při ukládání zprávy:", err);
+  }
+});
+
 
   socket.on("deleteMessage", async (id) => {
     const username = socket.data.username;
@@ -215,18 +221,18 @@ socket.on("joinRoom", async ({ username, roomId }) => {
   });
 
   socket.on("disconnect", () => {
-  const username = socket.data.username;
-  const roomId = socket.data.roomId;
+    const username = socket.data.username;
+    const roomId = socket.data.roomId;
 
-  if (username && roomId) {
-    socket.to(roomId).emit("receiveMessage", {
-      system: true,
-      text: `${username} opustil místnost`
-    });
-  }
+    if (username && roomId) {
+      socket.to(roomId).emit("receiveMessage", {
+        system: true,
+        text: `${username} opustil místnost`
+      });
+    }
 
-  updateRoomUserCount(roomId);
-});
+    updateRoomUserCount(roomId);
+  });
 
 });
 

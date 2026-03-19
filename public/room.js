@@ -22,9 +22,6 @@ socket.on("chatHistory", (messages) => {
 // NOVÁ ZPRÁVA
 socket.on("receiveMessage", (msg) => {
   addMessage(msg);
-  if (msg.user === currentUsername) {
-    html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
-  }
 });
 
 
@@ -61,23 +58,25 @@ function addMessage(msg) {
 
   const div = document.createElement("div");
   div.className = "msg";
+  div.dataset.id = msg.id; // důležité pro mazání
 
-  div.innerHTML = `
+  let html = `
     <span class="user" style="color:${msg.color}">${msg.user}</span>
-    <span class="text" style="color:${msg.color}">${msg.text}</span>
+    <span class="text">${msg.text}</span>
     <span class="time">(${msg.time})</span>
   `;
 
+  // 🔥 Tady přidáme tlačítko Smazat
+  if (msg.user === username) {
+    html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
+  }
+
+  div.innerHTML = html;
 
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
 
-if (msg.system) {
-  chat.innerHTML += `<div class="system">${msg.text}</div>`;
-} else {
-  // tvoje normální zpráva
-}
 
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("delete-btn")) {
