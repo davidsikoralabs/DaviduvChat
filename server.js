@@ -196,7 +196,25 @@ socket.on("joinRoom", async ({ username, roomId }) => {
     io.to(roomId).emit("receiveMessage", msg);
   });
 
-socket.on("disconnect", () => {
+  socket.on("deleteMessage", async (id) => {
+    const username = socket.data.username;
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("user")
+      .eq("id", id)
+      .single();
+
+    if (error || !data || data.user !== username) {
+      return;
+    }
+
+    await supabase.from("messages").delete().eq("id", id);
+
+    io.to(socket.data.roomId).emit("messageDeleted", id);
+  });
+
+  socket.on("disconnect", () => {
   const username = socket.data.username;
   const roomId = socket.data.roomId;
 

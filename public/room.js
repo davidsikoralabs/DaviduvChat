@@ -21,7 +21,23 @@ socket.on("chatHistory", (messages) => {
 
 // NOVÁ ZPRÁVA
 socket.on("receiveMessage", (msg) => {
-  addMessage(msg);
+  const div = document.createElement("div");
+  div.classList.add("msg");
+  div.dataset.id = msg.id; 
+
+  let html = `
+    <span class="user" style="color:${msg.color}">${msg.user}</span>
+    ${msg.text}
+    <span class="time">${msg.time}</span>
+  `;
+
+  // 🔥 Tady přidáme tlačítko Smazat
+  if (msg.user === currentUsername) {
+    html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
+  }
+
+  div.innerHTML = html;
+  chat.appendChild(div);
 });
 
 
@@ -31,6 +47,12 @@ socket.on("roomUserCount", ({ roomId: id, count }) => {
     document.getElementById("onlineCount").textContent = "Online: " + count;
   }
 });
+
+socket.on("messageDeleted", (id) => {
+  const el = document.querySelector(`[data-id="${id}"]`)?.closest(".msg");
+  if (el) el.remove();
+});
+
 
 // ODESLÁNÍ
 document.getElementById("sendButton").onclick = sendMessage;
@@ -69,3 +91,10 @@ if (msg.system) {
 } else {
   // tvoje normální zpráva
 }
+
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("delete-btn")) {
+    const id = e.target.dataset.id;
+    socket.emit("deleteMessage", id);
+  }
+});
