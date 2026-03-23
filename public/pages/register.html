@@ -1,0 +1,27 @@
+<div class="auth-wrapper">
+
+    <div class="auth-card">
+        <h2>Registrace</h2>
+
+        <label>Uživatelské jméno</label>
+        <input id="regUsername" type="text" placeholder="Vaše přezdívka">
+
+        <label>Email</label>
+        <input id="regEmail" type="email" placeholder="Váš email">
+
+        <label>Heslo</label>
+        <input id="regPassword" type="password" placeholder="Zvolte heslo">
+
+        <label>Potvrzení hesla</label>
+        <input id="regPassword2" type="password" placeholder="Zadejte heslo znovu">
+
+        <button id="registerBtn">Vytvořit účet</button>
+
+        <div class="auth-links">
+            <a onclick="goTo('/login')">Máte účet? Přihlášení</a>
+        </div>
+    </div>
+
+</div>
+
+<script type="module" src="/pages/register.js"></script>

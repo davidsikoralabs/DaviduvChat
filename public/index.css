@@ -3,9 +3,8 @@ body {
   background: #7d7b90;
   margin: 0;
   padding: 20px;
-  display: flex;
-  justify-content: center;
 }
+
 
 .page-wrapper {
   width: 100%;
@@ -35,7 +34,7 @@ body {
   background: #3a3952;
 }
 
-input {
+.page-wrapper input {
   width: 100%;
   padding: 12px 0 12px 0;
   border-radius: 6px;
@@ -46,7 +45,7 @@ input {
   font-size: 16px;
 }
 
-button {
+.page-wrapper button {
   width: 100%;
   padding: 12px;
   border-radius: 6px;
@@ -57,6 +56,7 @@ button {
   cursor: pointer;
   margin-top: 5px;
 }
+
 
 button:hover {
   background: #8e7ffb;
@@ -82,6 +82,85 @@ button:hover {
   color: #ff3b3b;
 }
 
+/* LOGIN / AUTH PAGES */
+
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 80px;
+    min-height: 100vh;
+}
+
+.auth-card {
+    background: #1e1e1e;
+    padding: 25px;
+    width: 320px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.35);
+}
+
+.auth-card h2 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.auth-card input {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0 15px 0;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: white;
+}
+
+.auth-card button {
+    width: 100%;
+    padding: 12px;
+    background: #4a8cff;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.auth-card button:hover {
+    background: #6aa0ff;
+}
+
+.auth-links {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.auth-links a {
+    display: block;
+    margin-top: 5px;
+    color: #4a8cff;
+    cursor: pointer;
+}
+
+/* Přepiš login inputy, aby byly kompaktní */
+.auth-card input {
+    width: 100%;
+    padding: 8px 10px;   /* menší padding */
+    margin: 6px 0 12px 0;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: white;
+    font-size: 14px;     /* menší text */
+    box-sizing: border-box;
+}
+
+/* Přepiš login button */
+.auth-card button {
+    padding: 10px;
+    font-size: 15px;
+}
 
 @media (max-width: 900px) {
   body {

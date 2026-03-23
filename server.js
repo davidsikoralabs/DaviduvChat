@@ -4,6 +4,11 @@ import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import cors from "cors";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -55,6 +60,12 @@ async function loadRoomsFromDB() {
 loadRoomsFromDB();
 
 app.use(express.static("public"));
+
+// SPA fallback – všechny cesty vrací index.html
+app.get("*", (req, res) => {
+    res.sendFile(__dirname + "/public/index.html");
+});
+
 
 /* ========== API PRO MÍSTNOSTI ========== */
 
@@ -253,5 +264,5 @@ function updateRoomUserCount(roomId) {
   io.emit("roomUserCount", { roomId, count });
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 server.listen(PORT, () => console.log("Server běží na portu", PORT));
