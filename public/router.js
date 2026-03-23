@@ -7,8 +7,27 @@ async function requireAuth() {
 
 async function loadPage(path) {
     const html = await fetch(path).then(r => r.text());
-    document.getElementById("app").innerHTML = html;
+
+    const app = document.getElementById("app");
+    app.innerHTML = html;
+
+    // Najdeme všechny <script> tagy v načteném HTML
+    const scripts = app.querySelectorAll("script");
+
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        newScript.type = oldScript.type || "text/javascript";
+
+        if (oldScript.src) {
+            newScript.src = oldScript.src;
+        } else {
+            newScript.textContent = oldScript.textContent;
+        }
+
+        oldScript.replaceWith(newScript);
+    });
 }
+
 
 // Jednoduchý router
 async function router() {
