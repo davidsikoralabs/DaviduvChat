@@ -28,5 +28,5 @@ document.getElementById("loginBtn").onclick = async () => {
     // počkáme, až Supabase uloží session
     await new Promise(r => setTimeout(r, 200));
 
-    goTo("/rooms");
+    goTo("/profile");
 };
