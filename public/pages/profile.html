@@ -1,46 +1,34 @@
-<div class="auth-wrapper">
+<div class="profile-wrapper">
 
-    <div class="auth-card">
-        <h2>Můj profil</h2>
+    <div class="profile-card">
 
-        <div id="profileInfo">
-            <p><strong>Uživatelské jméno:</strong> <span id="pUsername">...</span></p>
-            <p><strong>Email:</strong> <span id="pEmail">...</span></p>
-            <p><strong>Vytvořen:</strong> <span id="pCreated">...</span></p>
+        <div class="profile-header">
+            <img id="avatar" class="avatar" src="/assets/avatar-placeholder.png">
+            <h2 id="usernameDisplay">Uživatel</h2>
+            <p id="bioDisplay" class="bio">Popis profilu…</p>
         </div>
 
-        <button id="logoutBtn">Odhlásit se</button>
-
-        <div class="auth-links">
-            <a onclick="goTo('/rooms')">Zpět do místností</a>
+        <div class="profile-info">
+            <div><strong>Email:</strong> <span id="emailDisplay"></span></div>
+            <div><strong>Registrován:</strong> <span id="createdAtDisplay"></span></div>
         </div>
+
+        <div class="profile-stats">
+            <div class="stat">
+                <span id="roomsCount">0</span>
+                <label>Místnosti</label>
+            </div>
+            <div class="stat">
+                <span id="messagesCount">0</span>
+                <label>Zprávy</label>
+            </div>
+        </div>
+
+        <button id="editProfileBtn">Upravit profil</button>
+        <button id="logoutBtn" class="logout">Odhlásit se</button>
+
     </div>
 
 </div>
 
-<script type="module">
-import { supabase } from "/supabase.js";
-
-// Načtení dat uživatele
-async function loadProfile() {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-        goTo("/login");
-        return;
-    }
-
-    const user = data.user;
-
-    document.getElementById("pUsername").textContent = user.user_metadata.username;
-    document.getElementById("pEmail").textContent = user.email;
-    document.getElementById("pCreated").textContent = new Date(user.created_at).toLocaleString();
-}
-
-// Odhlášení
-document.getElementById("logoutBtn").onclick = async () => {
-    await supabase.auth.signOut();
-    goTo("/login");
-};
-
-loadProfile();
-</script>
+<script type="module" src="/pages/profile.js"></script>
