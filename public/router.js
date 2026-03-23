@@ -14,8 +14,10 @@ async function loadPage(path) {
     // Najdeme všechny <script> tagy v načteném HTML
     const scripts = app.querySelectorAll("script");
 
-    scripts.forEach(oldScript => {
+    for (const oldScript of scripts) {
         const newScript = document.createElement("script");
+
+        // zachováme typ (module / text/javascript)
         newScript.type = oldScript.type || "text/javascript";
 
         if (oldScript.src) {
@@ -25,9 +27,15 @@ async function loadPage(path) {
         }
 
         oldScript.replaceWith(newScript);
-    });
-}
 
+        // počkáme, až se script načte
+        if (newScript.src) {
+            await new Promise(resolve => {
+                newScript.onload = resolve;
+            });
+        }
+    }
+}
 
 // Jednoduchý router
 async function router() {
@@ -42,22 +50,22 @@ async function router() {
     }
 
     if (route === "/" || route === "/rooms") {
-        loadPage("/pages/rooms.html");
+        await loadPage("/pages/rooms.html");
     }
     else if (route === "/login") {
-        loadPage("/pages/login.html");
+        await loadPage("/pages/login.html");
     }
     else if (route === "/register") {
-        loadPage("/pages/register.html");
+        await loadPage("/pages/register.html");
     }
     else if (route.startsWith("/profile")) {
-        loadPage("/pages/profile.html");
+        await loadPage("/pages/profile.html");
     }
     else if (route === "/reset-password") {
-        loadPage("/pages/reset-password.html");
+        await loadPage("/pages/reset-password.html");
     }
     else {
-        loadPage("/pages/rooms.html"); // fallback
+        await loadPage("/pages/rooms.html"); // fallback
     }
 }
 
