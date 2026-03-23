@@ -67,6 +67,8 @@ function goTo(url) {
     router();
 }
 
+window.goTo = goTo;
+
 // Reakce na tlačítko zpět/vpřed
 window.addEventListener("popstate", router);
 
