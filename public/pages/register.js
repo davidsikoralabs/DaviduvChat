@@ -49,5 +49,5 @@ document.getElementById("registerBtn").onclick = async () => {
     });
 
     // 3) přesměrování
-    goTo("/rooms");
+    goTo("/login");
 };

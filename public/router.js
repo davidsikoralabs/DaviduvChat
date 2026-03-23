@@ -49,8 +49,12 @@ async function router() {
         }
     }
 
-    if (route === "/" || route === "/rooms") {
-        await loadPage("/pages/rooms.html");
+    if (route === "/") {
+    goTo("/login");
+    return;
+    }
+    if (route === "/rooms") {
+    await loadPage("/pages/rooms.html");
     }
     else if (route === "/login") {
         await loadPage("/pages/login.html");
