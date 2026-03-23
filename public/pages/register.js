@@ -1,3 +1,6 @@
+alert("REGISTER JS LOADED");
+
+
 console.log("REGISTER JS LOADED");
 
 import { supabase } from "/supabase.js";
