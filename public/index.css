@@ -274,7 +274,7 @@ button:hover {
 
 /* Modal window */
 .modal {
-    background: #fff;
+    background: #010101;
     padding: 25px;
     width: 90%;
     max-width: 380px;
@@ -292,7 +292,7 @@ button:hover {
 
 .modal label {
     font-size: 14px;
-    color: #444;
+    color: #fffefe;
     margin-top: 10px;
     display: block;
 }
@@ -300,17 +300,29 @@ button:hover {
 .modal input,
 .modal textarea {
     width: 100%;
-    padding: 10px;
+    padding: 8px 10px;
     margin-top: 4px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    border-radius: 10px;
+    border: 1px solid #d0c4ff; /* jemná fialová */
+    background: #faf8ff;       /* velmi světlá fialová */
     font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
 }
 
+/* Focus efekt */
+.modal input:focus,
+.modal textarea:focus {
+    border-color: #a48bff;
+    box-shadow: 0 0 0 2px rgba(164, 139, 255, 0.25);
+}
+
+/* Textarea výška */
 .modal textarea {
     height: 70px;
     resize: none;
 }
+
 
 /* Buttons */
 .modal-buttons {
@@ -321,7 +333,7 @@ button:hover {
 
 .modal-buttons .save {
     flex: 1;
-    background: #1DA1F2;
+    background: #6711e8;
     color: white;
     border: none;
     padding: 10px;
