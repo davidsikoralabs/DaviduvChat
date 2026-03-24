@@ -25,6 +25,23 @@ async function loadProfile() {
     if (profile.avatar_url) {
         document.getElementById("avatar").src = profile.avatar_url;
     }
+    document.getElementById("editProfileBtn").onclick = async () => {
+    const newUsername = prompt("Nové uživatelské jméno:");
+    const newBio = prompt("Nový popis profilu:");
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
+        .from("profiles")
+        .update({
+            username: newUsername,
+            bio: newBio
+        })
+        .eq("id", user.id);
+
+    loadProfile();
+};
+
 }
 
 // ZMĚNA AVATARU
