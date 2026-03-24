@@ -112,3 +112,11 @@ document.addEventListener("click", (e) => {
     socket.emit("deleteMessage", id);
   }
 });
+
+document.getElementById("backToRooms").onclick = () => {
+    window.location.href = "/pages/rooms.html";
+};
+
+document.getElementById("goToProfile").onclick = () => {
+    window.location.href = "/pages/profile.html";
+};
