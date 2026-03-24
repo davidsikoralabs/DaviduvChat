@@ -61,11 +61,12 @@ loadRoomsFromDB();
 
 app.use(express.static("public"));
 
-// SPA fallback – všechny cesty vrací index.html
-app.get("*", (req, res) => {
-    res.sendFile(__dirname + "/public/index.html");
-});
+/* ========== STRÁNKY ========== */
 
+// CHAT STRÁNKA
+app.get("/chat", (req, res) => {
+  res.sendFile(__dirname + "/public/pages/chat.html");
+});
 
 /* ========== API PRO MÍSTNOSTI ========== */
 
@@ -99,7 +100,6 @@ app.post("/api/rooms", async (req, res) => {
 
   const room = { id, name: name.trim() };
 
-  // 🔥 ULOŽIT DO SUPABASE
   const { error } = await supabase.from("rooms").insert(room);
 
   if (error) {
@@ -110,7 +110,6 @@ app.post("/api/rooms", async (req, res) => {
   rooms.push(room);
   res.json(room);
 });
-
 
 // smazání místnosti (jen admin)
 app.delete("/api/rooms/:id", async (req, res) => {
@@ -124,6 +123,13 @@ app.delete("/api/rooms/:id", async (req, res) => {
   await supabase.from("rooms").delete().eq("id", id);
   rooms = rooms.filter((r) => r.id !== id);
   res.json({ success: true });
+});
+
+/* ========== SPA FALLBACK ========== */
+
+// VŠECHNO ostatní vrací index.html
+app.get("*", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
 });
 
 /* ========== SOCKET.IO ========== */
