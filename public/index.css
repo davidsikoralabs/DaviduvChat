@@ -261,6 +261,92 @@ button:hover {
     font-size: 15px;
 }
 
+/* Backdrop */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Modal window */
+.modal {
+    background: #fff;
+    padding: 25px;
+    width: 90%;
+    max-width: 380px;
+    border-radius: 16px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal label {
+    font-size: 14px;
+    color: #444;
+    margin-top: 10px;
+    display: block;
+}
+
+.modal input,
+.modal textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 4px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.modal textarea {
+    height: 70px;
+    resize: none;
+}
+
+/* Buttons */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons .save {
+    flex: 1;
+    background: #1DA1F2;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.modal-buttons .cancel {
+    flex: 1;
+    background: #eee;
+    color: #333;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+
 @media (max-width: 900px) {
   body {
     padding: 0;

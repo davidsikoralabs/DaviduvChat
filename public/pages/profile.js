@@ -98,4 +98,51 @@ document.getElementById("logoutBtn").onclick = async () => {
     goTo("/login");
 };
 
+// Otevření modalu
+document.getElementById("editProfileBtn").onclick = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Načteme aktuální data
+    const { data } = await supabase
+        .from("profiles")
+        .select("username, bio")
+        .eq("id", user.id)
+        .single();
+
+    // Předvyplníme modal
+    document.getElementById("modalUsername").value = data.username || "";
+    document.getElementById("modalBio").value = data.bio || "";
+
+    // Zobrazíme modal
+    document.getElementById("editModal").style.display = "flex";
+};
+
+// Zavření modalu
+document.getElementById("closeModalBtn").onclick = () => {
+    document.getElementById("editModal").style.display = "none";
+};
+
+// Uložení změn
+document.getElementById("saveProfileBtn").onclick = async () => {
+    const newUsername = document.getElementById("modalUsername").value;
+    const newBio = document.getElementById("modalBio").value;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
+        .from("profiles")
+        .update({
+            username: newUsername,
+            bio: newBio
+        })
+        .eq("id", user.id);
+
+    // Zavřít modal
+    document.getElementById("editModal").style.display = "none";
+
+    // Aktualizovat profil
+    loadProfile();
+};
+
+
 loadProfile();
