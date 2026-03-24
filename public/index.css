@@ -240,9 +240,12 @@ button:hover {
     cursor: pointer;
 }
 
-.chat-top {
+.chat-container {
     width: 100%;
     max-width: 600px;
+}
+
+.chat-top {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
