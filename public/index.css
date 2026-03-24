@@ -394,4 +394,10 @@ button:hover {
     font-size: 20px;
     padding: 14px;
   }
+
+  @media (max-width: 768px) {
+  #roomsList {
+    display: none;
+  }
+}
 }
