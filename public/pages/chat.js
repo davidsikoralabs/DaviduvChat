@@ -85,7 +85,7 @@ function addMessage(msg) {
 
   let html = `
     <span class="user" style="color:${msg.color}">${msg.user}</span>
-    <span class="text">${msg.text}</span>
+    <span class="text" style="color:${msg.color}">${msg.text}</span>
     <span class="time">(${msg.time})</span>
   `;
 
