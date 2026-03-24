@@ -240,6 +240,14 @@ button:hover {
     cursor: pointer;
 }
 
+.chat-top {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
 .chat-buttons {
     display: flex;
     gap: 10px;
@@ -419,5 +427,10 @@ button:hover {
   #roomsList {
     display: none;
   }
+
+.chat-top {
+    justify-content: center;
+    gap: 10px;
+}
 
 }
