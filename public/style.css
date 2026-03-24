@@ -143,3 +143,38 @@ button:hover {
     padding: 12px;
   }
 }
+
+@media (max-width: 400px) {
+  body {
+    padding: 0;
+  }
+
+  .chat-wrapper {
+    height: 100dvh;
+    width: 60dvh;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
+  #chat {
+    padding: 10px;
+  }
+
+  .msg {
+    font-size: 18px;
+    padding: 10px 14px;
+  }
+
+  #inputBar {
+    flex-direction: column;
+    padding: 15px;
+    gap: 12px;
+  }
+
+  #message,
+  #sendButton {
+    width: 100%;
+    font-size: 20px;
+    padding: 12px;
+  }
+}
