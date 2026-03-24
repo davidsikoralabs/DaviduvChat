@@ -11,8 +11,8 @@ body {
 
 /* Wrapper – omezení šířky + centrování */
 .chat-wrapper {
-  width: 100%;
-  max-width: 600px;
+  width: 120vh;
+  max-width: 800px;
   background: #1e1e2f;
   border-radius: 12px;
   display: flex;
@@ -116,6 +116,7 @@ button:hover {
 
   .chat-wrapper {
     height: 100dvh;
+    width: 70dvh;
     border-radius: 0;
     max-width: 100%;
   }
