@@ -1,7 +1,7 @@
 import { supabase } from "/supabase.js";
 
 const { data: { user } } = await supabase.auth.getUser();
-const username = user.email.split("@")[0];
+const username = localStorage.getItem("username");
 
 let roomId = localStorage.getItem("roomId") || "hlavni-chat";
 
