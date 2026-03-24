@@ -28,7 +28,6 @@ async function loadProfile() {
     
 };
 
-
 // ZMĚNA AVATARU
 document.getElementById("changeAvatarBtn").onclick = () => {
     document.getElementById("avatarInput").click();
@@ -81,6 +80,10 @@ document.getElementById("avatarInput").onchange = async (e) => {
 document.getElementById("logoutBtn").onclick = async () => {
     await supabase.auth.signOut();
     goTo("/login");
+};
+
+document.getElementById("chatBtn").onclick = () => {
+    goTo("/chat");
 };
 
 // Otevření modalu
