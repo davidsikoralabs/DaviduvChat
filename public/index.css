@@ -271,6 +271,15 @@ button:hover {
     background: #666;
 }
 
+.layout {
+    display: flex;
+    gap: 20px;
+}
+
+#roomsList {
+    width: 200px;
+}
+
 /* Přepiš login inputy, aby byly kompaktní */
 .auth-card input {
     width: 100%;
@@ -426,9 +435,12 @@ button:hover {
     padding: 14px;
   }
 
-
+  .layout {
+    flex-direction: column;
+  }
+  
   #roomsList {
-    display: none;
+    display: none !important;
   }
 
 .chat-top {
