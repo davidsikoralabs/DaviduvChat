@@ -3,31 +3,23 @@ import { supabase } from "/supabase.js";
 console.log("PROFILE JS LOADED");
 
 async function loadProfile() {
-    // 1) Získáme přihlášeného uživatele
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         goTo("/login");
         return;
     }
 
-    // 2) Načteme profil z tabulky profiles
-    const { data: profile, error } = await supabase
+    const { data: profile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-    if (error) {
-        console.error("Profile load error:", error);
-        return;
-    }
-
-    // 3) Naplníme UI
     document.getElementById("emailDisplay").textContent = user.email;
     document.getElementById("createdAtDisplay").textContent =
         new Date(user.created_at).toLocaleDateString("cs-CZ");
 
-    document.getElementById("usernameDisplay").textContent = profile.username || "Uživatel";
+    document.getElementById("usernameDisplay").textContent = profile.username;
     document.getElementById("bioDisplay").textContent = profile.bio || "Bez popisu";
 
     if (profile.avatar_url) {
@@ -35,31 +27,55 @@ async function loadProfile() {
     }
 }
 
-// EDITACE PROFILU
-document.getElementById("editProfileBtn").onclick = async () => {
-    const newUsername = prompt("Nové uživatelské jméno:");
-    const newBio = prompt("Nový popis profilu:");
+// ZMĚNA AVATARU
+document.getElementById("changeAvatarBtn").onclick = () => {
+    document.getElementById("avatarInput").click();
+};
+
+document.getElementById("avatarInput").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    const { error } = await supabase
-        .from("profiles")
-        .update({
-            username: newUsername,
-            bio: newBio
-        })
-        .eq("id", user.id);
+    const fileName = `${user.id}-${Date.now()}`;
 
-    if (error) {
-        alert("Chyba při ukládání profilu.");
+    // 1) Upload do Storage
+    const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, {
+            cacheControl: "3600",
+            upsert: true
+        });
+
+    if (uploadError) {
+        alert("Chyba při nahrávání obrázku.");
         return;
     }
 
-    alert("Profil aktualizován!");
-    loadProfile();
+    // 2) Získání veřejné URL
+    const { data: publicUrlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+    const avatarUrl = publicUrlData.publicUrl;
+
+    // 3) Uložení do profilu
+    const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+
+    if (updateError) {
+        alert("Chyba při ukládání URL.");
+        return;
+    }
+
+    // 4) Aktualizace UI
+    document.getElementById("avatar").src = avatarUrl;
+    alert("Avatar aktualizován!");
 };
 
-// LOGOUT
 document.getElementById("logoutBtn").onclick = async () => {
     await supabase.auth.signOut();
     goTo("/login");
