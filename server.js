@@ -270,5 +270,5 @@ function updateRoomUserCount(roomId) {
   io.emit("roomUserCount", { roomId, count });
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => console.log("Server běží na portu", PORT));
