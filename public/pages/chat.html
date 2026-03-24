@@ -12,34 +12,34 @@
 </head>
 
 <body>
+
   <div class="chat-container">
+
     <div class="chat-top">
       <button id="backToRooms">← Hlavní stránka</button>
       <button id="goToProfile">Můj profil</button>
     </div>
 
-    <div class="chat-wrapper">
+    <div class="layout">
 
-      <h1 id="roomTitle" style="text-align:center; margin: 10px 0 0 0;">Místnost</h1>
-      <p id="onlineCount" style="text-align:center; margin: 0 0 10px 0;">Online: 0</p>
+      <div class="chat-wrapper">
 
-      <!-- Chat okno -->
-      <div id="chat"></div>
+        <h1 id="roomTitle" style="text-align:center; margin: 10px 0 0 0;">Místnost</h1>
+        <p id="onlineCount" style="text-align:center; margin: 0 0 10px 0;">Online: 0</p>
 
-      <!-- Input bar -->
-      <div id="inputBar">
-        <input id="message" type="text" placeholder="Napište zprávu...">
-        <button id="sendButton">Odeslat</button>
+        <div id="chat"></div>
+
+        <div id="inputBar">
+          <input id="message" type="text" placeholder="Napište zprávu...">
+          <button id="sendButton">Odeslat</button>
+        </div>
+
       </div>
 
+      <aside id="roomsList"></aside>
+
     </div>
 
-      <main id="chatArea">
-        <!-- sem přijde tvůj chat -->
-      </main>
-    </div>
-      <div class="layout">
-      <aside id="roomsList"></aside>
   </div>
 
 </body>
