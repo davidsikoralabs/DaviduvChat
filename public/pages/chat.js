@@ -5,24 +5,6 @@ const username = localStorage.getItem("username");
 
 let roomId = localStorage.getItem("roomId") || "hlavni-chat";
 
-async function loadRooms() {
-  const res = await fetch("/api/rooms");
-  const rooms = await res.json();
-
-  const list = document.getElementById("roomsList");
-  list.innerHTML = "";
-
-  rooms.forEach(room => {
-    const div = document.createElement("div");
-    div.className = "room-item";
-    div.textContent = `${room.name} (${room.users})`;
-    div.onclick = () => switchRoom(room.id);
-    list.appendChild(div);
-  });
-}
-
-loadRooms();
-
 if (!username || !roomId) {
   alert("Chybí jméno nebo místnost. Vraťte se na hlavní stránku.");
   window.location.href = "/";
