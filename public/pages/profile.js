@@ -42,7 +42,7 @@ document.getElementById("avatarInput").onchange = async (e) => {
 
     // 1) Upload do Storage
     const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("avatar")
         .upload(fileName, file, {
             cacheControl: "3600",
             upsert: true
@@ -55,7 +55,7 @@ document.getElementById("avatarInput").onchange = async (e) => {
 
     // 2) Získání veřejné URL
     const { data: publicUrlData } = supabase.storage
-        .from("avatars")
+        .from("avatar")
         .getPublicUrl(fileName);
 
     const avatarUrl = publicUrlData.publicUrl;
