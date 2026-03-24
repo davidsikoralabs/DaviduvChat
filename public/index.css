@@ -435,14 +435,6 @@ button:hover {
     padding: 14px;
   }
 
-  .layout {
-    flex-direction: column;
-  }
-  
-  #roomsList {
-    display: none !important;
-  }
-
 .chat-top {
     justify-content: center;
     gap: 10px;
