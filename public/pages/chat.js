@@ -114,9 +114,9 @@ document.addEventListener("click", (e) => {
 });
 
 document.getElementById("backToRooms").onclick = () => {
-    window.location.href = "/pages/rooms.html";
+    window.location.href = "/rooms.html";
 };
 
 document.getElementById("goToProfile").onclick = () => {
-    window.location.href = "/pages/profile.html";
+    window.location.href = "/profile.html";
 };
