@@ -441,3 +441,49 @@ button:hover {
 }
 
 }
+
+@media (max-width: 400px) {
+  body {
+    padding: 0;
+  }
+
+.profile-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Odhlášení přes celou šířku */
+.logout {
+    grid-column: span 2;
+}
+
+.avatar {
+    width: 150px;
+    height: 150px;
+    
+}
+
+  .page-wrapper {
+    border-radius: 0;
+    height: 100dvh;
+    width: 50dvh;
+    max-width: 100%;
+  }
+
+  .room {
+    font-size: 18px;
+    padding: 12px;
+  }
+
+  input, button {
+    font-size: 20px;
+    padding: 14px;
+  }
+
+.chat-top {
+    justify-content: center;
+    gap: 10px;
+}
+
+}
