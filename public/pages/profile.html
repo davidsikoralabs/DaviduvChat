@@ -2,35 +2,36 @@
 
     <div class="profile-card">
 
-        <div class="profile-header">
-            <img id="avatar" class="avatar" src="/assets/avatar-placeholder.png">
-            <button id="changeAvatarBtn" class="small-btn">Změnit fotku</button>
-            <input type="file" id="avatarInput" accept="image/*" style="display:none">
-            <h2 id="usernameDisplay">Uživatel</h2>
-            <p id="bioDisplay" class="bio">Popis profilu…</p>
-        </div>
+    <img id="avatar" class="avatar" src="/assets/avatar-placeholder.png">
 
-        <div class="profile-info">
-            <div><strong>Email:</strong> <span id="emailDisplay"></span></div>
-            <div><strong>Registrován:</strong> <span id="createdAtDisplay"></span></div>
-        </div>
+    <button id="changeAvatarBtn" class="change-photo">Změnit fotku</button>
+    <input type="file" id="avatarInput" accept="image/*" style="display:none">
 
-        <div class="profile-stats">
-            <div class="stat">
-                <span id="roomsCount">0</span>
-                <label>Místnosti</label>
-            </div>
-            <div class="stat">
-                <span id="messagesCount">0</span>
-                <label>Zprávy</label>
-            </div>
-        </div>
+    <h2 id="usernameDisplay" class="username"></h2>
+    <p id="bioDisplay" class="bio"></p>
 
+    <div class="profile-info">
+        <div>Email: <span id="emailDisplay"></span></div>
+        <div>Registrován: <span id="createdAtDisplay"></span></div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="stat">
+            <span id="roomsCount">0</span>
+            <label>Místnosti</label>
+        </div>
+        <div class="stat">
+            <span id="messagesCount">0</span>
+            <label>Zprávy</label>
+        </div>
+    </div>
+
+    <div class="profile-buttons">
         <button id="editProfileBtn">Upravit profil</button>
         <button id="logoutBtn" class="logout">Odhlásit se</button>
-
     </div>
 
 </div>
+
 
 <script type="module" src="/pages/profile.js"></script>

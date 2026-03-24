@@ -5,14 +5,105 @@ body {
   padding: 20px;
 }
 
+.profile-card {
+    max-width: 420px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #c6c6c6;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+/* Avatar */
 .avatar {
     width: 120px;
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
     object-position: center;
+    margin: 0 auto 10px auto;
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 3px #6711e8;
+}
+
+/* Změnit fotku */
+.change-photo {
+    background: none;
+    border: none;
+    color: #6711e8;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+/* Username */
+.username {
+    color: #201f21;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Bio */
+.bio {
+    color: #555;
+    font-size: 14px;
+    margin: 6px 0 20px 0;
+}
+
+/* Info */
+.profile-info {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Stats */
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 20px;
+}
+
+.profile-stats .stat span {
+    font-size: 20px;
+    font-weight: bold;
     display: block;
-    margin: 0 auto;
+}
+
+.profile-stats .stat label {
+    font-size: 12px;
+    color: #171414;
+}
+
+/* Buttons */
+.profile-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.profile-buttons button {
+    flex: 1;
+    max-width: 150px;
+    padding: 10px 0;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#editProfileBtn {
+    background: #6711e8;
+    color: white;
+}
+
+.logout {
+    background: #eee;
+    color: #333;
 }
 
 .page-wrapper {
@@ -177,8 +268,8 @@ button:hover {
 
   @media (max-width: 600px) {
     .avatar {
-        width: 90px;
-        height: 90px;
+        width: 150px;
+        height: 150px;
     }
 }
 
