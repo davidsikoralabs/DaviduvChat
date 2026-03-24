@@ -2,8 +2,7 @@
 
     <h1 style="text-align:center; margin-bottom: 20px;">Chat – výběr místnosti</h1>
 
-    <label>Vaše jméno:</label>
-    <input id="username" type="text" placeholder="Zadejte jméno">
+    <p>Přihlášen jako: <strong id="currentUser"></strong></p>
 
     <h2>Místnosti</h2>
     <div id="rooms"></div>
@@ -15,7 +14,29 @@
 
 </div>
 
-<script>
+<script type="module">
+    import { supabase } from "/supabase.js";
+
+    // 1) Získáme přihlášeného uživatele
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        // není přihlášený → pryč na login
+        window.location.href = "/pages/login.html";
+    }
+
+    // 2) Username z profilu nebo emailu
+    const username =
+        user.user_metadata?.username ||
+        user.email.split("@")[0];
+
+    // 3) Zobrazíme ho v UI
+    document.getElementById("currentUser").textContent = username;
+
+    // 4) Uložíme ho pro chat.js
+    localStorage.setItem("username", username);
+
+    // 5) Načtení místností
     async function loadRooms() {
         const res = await fetch("/api/rooms");
         const rooms = await res.json();
@@ -28,31 +49,26 @@
             div.className = "room";
 
             div.innerHTML = `
-    <span class="roomName">${room.name} (${room.users} online)</span>
-    <button class="deleteRoom" data-id="${room.id}">×</button>
-  `;
+                <span class="roomName">${room.name} (${room.users} online)</span>
+                <button class="deleteRoom" data-id="${room.id}">×</button>
+            `;
 
             // kliknutí na název → vstup do místnosti
             div.querySelector(".roomName").onclick = () => enterRoom(room.id);
 
             container.appendChild(div);
         });
-
     }
 
+    loadRooms();
+
+    // 6) Vstup do místnosti
     function enterRoom(roomId) {
-        const username = document.getElementById("username").value.trim();
-        if (!username) {
-            alert("Zadejte jméno!");
-            return;
-        }
-
-        localStorage.setItem("username", username);
         localStorage.setItem("roomId", roomId);
-
-        window.location.href = "/room.html";
+        window.location.href = "/chat";
     }
 
+    // 7) Vytvoření místnosti
     document.getElementById("createRoomBtn").onclick = async () => {
         const name = document.getElementById("newRoomName").value.trim();
         const password = document.getElementById("adminPassword").value.trim();
@@ -78,10 +94,10 @@
         }
     };
 
-    loadRooms();
+    // 8) Mazání místnosti
     document.addEventListener("click", async (e) => {
         if (e.target.classList.contains("deleteRoom")) {
-            e.stopPropagation(); // zabrání otevření místnosti
+            e.stopPropagation();
 
             const id = e.target.dataset.id;
             const password = prompt("Zadejte admin heslo pro smazání místnosti:");
@@ -104,5 +120,4 @@
             }
         }
     });
-
 </script>
