@@ -109,6 +109,7 @@ button:hover {
 
 /* ====== MOBILNÍ VERZE ====== */
 
+/* TABLETY + ROZLOŽENÝ FOLD */
 @media (max-width: 900px) {
   body {
     padding: 0;
@@ -116,9 +117,8 @@ button:hover {
 
   .chat-wrapper {
     height: 100dvh;
-    width: 70dvh;
+    width: 100%;
     border-radius: 0;
-    max-width: 100%;
   }
 
   #chat {
@@ -126,7 +126,7 @@ button:hover {
   }
 
   .msg {
-    font-size: 20px;
+    font-size: 18px;
     padding: 12px 16px;
   }
 
@@ -139,42 +139,30 @@ button:hover {
   #message,
   #sendButton {
     width: 100%;
-    font-size: 20px;
+    font-size: 18px;
     padding: 12px;
   }
 }
 
-@media (max-width: 400px) {
-  body {
-    padding: 0;
-  }
-
+/* MOBILY + SLOŽENÝ FOLD */
+@media (max-width: 600px) {
   .chat-wrapper {
-    height: 100dvh;
-    width: 50dvh;
-    border-radius: 0;
-    max-width: 100%;
-  }
-
-  #chat {
-    padding: 10px;
+    width: 100%;
   }
 
   .msg {
-    font-size: 18px;
-    padding: 10px 14px;
+    font-size: 17px;
   }
+}
 
-  #inputBar {
-    flex-direction: column;
-    padding: 15px;
-    gap: 12px;
-  }
-
-  #message,
-  #sendButton {
+/* MALÉ MOBILY */
+@media (max-width: 400px) {
+  .chat-wrapper {
     width: 100%;
-    font-size: 20px;
-    padding: 12px;
+  }
+
+  .msg {
+    font-size: 16px;
+    padding: 10px 14px;
   }
 }

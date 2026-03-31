@@ -391,33 +391,26 @@ button:hover {
 }
 
 /* Animation */
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-
+/* TABLETY + ROZLOŽENÝ FOLD */
 @media (max-width: 900px) {
   body {
     padding: 0;
   }
 
-.profile-buttons {
+  .profile-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-}
+  }
 
-/* Odhlášení přes celou šířku */
-.logout {
+  .logout {
     grid-column: span 2;
-}
+  }
 
-.avatar {
+  .avatar {
     width: 150px;
     height: 150px;
-    
-}
+  }
 
   .page-wrapper {
     border-radius: 0;
@@ -435,55 +428,27 @@ button:hover {
     padding: 14px;
   }
 
-.chat-top {
+  .chat-top {
     justify-content: center;
     gap: 10px;
-}
-
-}
-
-@media (max-width: 400px) {
-  body {
-    padding: 0;
   }
-
-.profile-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
 }
 
-/* Odhlášení přes celou šířku */
-.logout {
-    grid-column: span 2;
+/* MOBILY + SLOŽENÝ FOLD */
+@media (max-width: 600px) {
+  .room {
+    font-size: 18px;
+  }
 }
 
-.avatar {
-    width: 150px;
-    height: 150px;
-    
-}
-
+/* MALÉ MOBILY */
+@media (max-width: 400px) {
   .page-wrapper {
-    border-radius: 0;
-    height: 100dvh;
-    width: 50dvh;
-    max-width: 100%;
+    width: 100%;
   }
 
   .room {
-    font-size: 18px;
+    font-size: 16px;
     padding: 12px;
   }
-
-  input, button {
-    font-size: 20px;
-    padding: 14px;
-  }
-
-.chat-top {
-    justify-content: center;
-    gap: 10px;
-}
-
 }
