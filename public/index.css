@@ -38,6 +38,7 @@ body {
 
 /* Změnit fotku */
 .change-photo {
+    text-align: center;
     background: none;
     border: none;
     color: #6711e8;
