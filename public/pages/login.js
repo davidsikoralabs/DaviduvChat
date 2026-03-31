@@ -28,5 +28,7 @@ document.getElementById("loginBtn").onclick = async () => {
     // počkáme, až Supabase uloží session
     await new Promise(r => setTimeout(r, 200));
 
-    goTo("/profile");
+    // 🔥 TADY JE OPRAVA
+    localStorage.removeItem("profileUser");
+    goTo("/profile.html");
 };
