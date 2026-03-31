@@ -30,15 +30,13 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-console.log("SUPABASE URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE KEY:", process.env.SUPABASE_ANON_KEY?.slice(0, 15) + "...");
-
 let rooms = [];
 
+/* ============================================================
+   NAČTENÍ MÍSTNOSTÍ
+============================================================ */
 async function loadRoomsFromDB() {
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("*");
+  const { data, error } = await supabase.from("rooms").select("*");
 
   if (error) {
     console.error("Chyba při načítání místností:", error);
@@ -47,30 +45,27 @@ async function loadRoomsFromDB() {
 
   rooms = data;
 
-  // Pokud v DB není hlavní místnost, vytvoříme ji
   if (!rooms.find(r => r.id === "hlavni-chat")) {
     const mainRoom = { id: "hlavni-chat", name: "Hlavní chat" };
     rooms.push(mainRoom);
     await supabase.from("rooms").insert(mainRoom);
   }
-
-  console.log("Načtené místnosti:", rooms);
 }
 
 loadRoomsFromDB();
 
 app.use(express.static("public"));
 
-/* ========== STRÁNKY ========== */
-
-// CHAT STRÁNKA
+/* ============================================================
+   STRÁNKY
+============================================================ */
 app.get("/chat", (req, res) => {
   res.sendFile(__dirname + "/public/pages/chat.html");
 });
 
-/* ========== API PRO MÍSTNOSTI ========== */
-
-// seznam místností + počet lidí
+/* ============================================================
+   API PRO MÍSTNOSTI
+============================================================ */
 app.get("/api/rooms", (req, res) => {
   const enriched = rooms.map((room) => {
     const roomSet = io.sockets.adapter.rooms.get(room.id);
@@ -80,65 +75,16 @@ app.get("/api/rooms", (req, res) => {
   res.json(enriched);
 });
 
-// vytvoření místnosti (jen admin)
-app.post("/api/rooms", async (req, res) => {
-  const { name, password } = req.body;
-
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: "Neplatné heslo" });
-  }
-
-  if (!name || !name.trim()) {
-    return res.status(400).json({ error: "Název místnosti je povinný" });
-  }
-
-  const id = name.trim().toLowerCase().replace(/\s+/g, "-");
-
-  if (rooms.find((r) => r.id === id)) {
-    return res.status(400).json({ error: "Místnost už existuje" });
-  }
-
-  const room = { id, name: name.trim() };
-
-  const { error } = await supabase.from("rooms").insert(room);
-
-  if (error) {
-    console.error("Chyba při ukládání místnosti:", error);
-    return res.status(500).json({ error: "Nepodařilo se uložit místnost" });
-  }
-
-  rooms.push(room);
-  res.json(room);
-});
-
-// smazání místnosti (jen admin)
-app.delete("/api/rooms/:id", async (req, res) => {
-  const { password } = req.body;
-  const { id } = req.params;
-
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: "Neplatné heslo" });
-  }
-
-  await supabase.from("rooms").delete().eq("id", id);
-  rooms = rooms.filter((r) => r.id !== id);
-  res.json({ success: true });
-});
-
-/* ========== SPA FALLBACK ========== */
-
-// VŠECHNO ostatní vrací index.html
-app.get("*", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
-
-/* ========== SOCKET.IO ========== */
-
-io.on("connection", async (socket) => {
+/* ============================================================
+   SOCKET.IO
+============================================================ */
+io.on("connection", (socket) => {
   console.log("Uživatel připojen");
 
-  // klient po připojení pošle jméno + místnost
-  socket.on("joinRoom", async ({ username, roomId }) => {
+  /* ------------------------------
+     JOIN ROOM
+  ------------------------------ */
+  socket.on("joinRoom", async ({ username, userId, roomId }) => {
     const room = rooms.find((r) => r.id === roomId);
     if (!room) {
       socket.emit("errorMessage", "Místnost neexistuje");
@@ -146,35 +92,31 @@ io.on("connection", async (socket) => {
     }
 
     socket.data.username = username || "Anonym";
+    socket.data.userId = userId;      // 🔥 TADY JE userId
     socket.data.roomId = roomId;
 
-    // 1) Nejdřív načteme historii
-    try {
-      const { data: history } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("room", roomId)
-        .order("id", { ascending: true });
+    // 1) Historie
+    const { data: history } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("room", roomId)
+      .order("id", { ascending: true });
 
-      const cleaned = history.map((msg) => ({
-        id: msg.id,
-        user: msg.user,
-        text: msg.text,
-        time: msg.time,
-        color: msg.color
-      }));
+    const cleaned = history.map((msg) => ({
+      id: msg.id,
+      user: msg.user,
+      userId: msg.userId,      // 🔥 přidáno
+      text: msg.text,
+      time: msg.time,
+      color: msg.color
+    }));
 
-      // pošleme historii jen tomu, kdo se připojuje
-      socket.emit("chatHistory", cleaned);
+    socket.emit("chatHistory", cleaned);
 
-    } catch (err) {
-      console.error("Chyba při načítání historie:", err);
-    }
-
-    // 2) Teprve teď připojíme socket do místnosti
+    // 2) Připojení do místnosti
     socket.join(roomId);
 
-    // 3) A teď pošleme systémovou zprávu všem ostatním
+    // 3) Systémová zpráva
     socket.to(roomId).emit("receiveMessage", {
       system: true,
       text: `${socket.data.username} se připojil do místnosti`
@@ -183,60 +125,55 @@ io.on("connection", async (socket) => {
     updateRoomUserCount(roomId);
   });
 
+  /* ------------------------------
+     SEND MESSAGE
+  ------------------------------ */
+  socket.on("sendMessage", async (text) => {
+    const username = socket.data.username || "Anonym";
+    const userId = socket.data.userId;     // 🔥
+    const roomId = socket.data.roomId;
 
-  // příjem zprávy
-socket.on("sendMessage", async (text) => {
-  const username = socket.data.username || "Anonym";
-  const roomId = socket.data.roomId || "general";
+    const msg = {
+      user: username,
+      userId: userId,                      // 🔥
+      text,
+      time: new Date().toLocaleTimeString("cs-CZ"),
+      color: getColorForUser(username),
+      room: roomId
+    };
 
-  const msg = {
-    user: username,
-    text,
-    time: new Date().toLocaleTimeString("cs-CZ"),
-    color: getColorForUser(username),
-    room: roomId
-  };
-
-  try {
-    // vložíme zprávu a necháme si vrátit vložený řádek (včetně ID)
-    const { data, error: insertError } = await supabase
+    const { data, error } = await supabase
       .from("messages")
       .insert(msg)
-      .select(); 
+      .select();
 
-    if (insertError) {
-      console.error("Chyba při ukládání zprávy:", insertError);
-      return;
-    }
-
-    const saved = data && data[0] ? data[0] : msg;
+    const saved = data?.[0] || msg;
 
     io.to(roomId).emit("receiveMessage", saved);
+  });
 
-  } catch (err) {
-    console.error("Výjimka při ukládání zprávy:", err);
-  }
-});
-
-
+  /* ------------------------------
+     DELETE MESSAGE
+  ------------------------------ */
   socket.on("deleteMessage", async (id) => {
     const username = socket.data.username;
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("messages")
       .select("user")
       .eq("id", id)
       .single();
 
-    if (error || !data || data.user !== username) {
-      return;
-    }
+    if (!data || data.user !== username) return;
 
     await supabase.from("messages").delete().eq("id", id);
 
     io.to(socket.data.roomId).emit("messageDeleted", id);
   });
 
+  /* ------------------------------
+     DISCONNECT
+  ------------------------------ */
   socket.on("disconnect", () => {
     const username = socket.data.username;
     const roomId = socket.data.roomId;
@@ -250,10 +187,11 @@ socket.on("sendMessage", async (text) => {
 
     updateRoomUserCount(roomId);
   });
-
 });
 
-// barva podle jména
+/* ============================================================
+   FUNKCE
+============================================================ */
 function getColorForUser(name) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -263,12 +201,14 @@ function getColorForUser(name) {
   return `hsl(${hue}, 70%, 50%)`;
 }
 
-// aktualizace počtu uživatelů v místnosti
 function updateRoomUserCount(roomId) {
   const roomSet = io.sockets.adapter.rooms.get(roomId);
   const count = roomSet ? roomSet.size : 0;
   io.emit("roomUserCount", { roomId, count });
 }
 
+/* ============================================================
+   START SERVERU
+============================================================ */
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log("Server běží na portu", PORT));

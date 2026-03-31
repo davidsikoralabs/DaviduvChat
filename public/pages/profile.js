@@ -37,13 +37,13 @@ async function loadMyProfile() {
 /* ---------------------------------------------------
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
-async function loadOtherUser(username) {
+async function loadOtherUser(userId) {
 
-    // 1) Najdeme profil podle username
+    // 1) Najdeme profil podle ID
     const { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("username", username)
+        .eq("id", userId)
         .single();
 
     if (error || !profile) {
@@ -53,9 +53,9 @@ async function loadOtherUser(username) {
 
     // 2) Najdeme auth uživatele podle ID
     const { data: authUser } = await supabase
-        .from("auth_users_view") // vysvětlím níže
+        .from("auth_users_view")
         .select("email, created_at")
-        .eq("id", profile.id)
+        .eq("id", userId)
         .single();
 
     renderProfile({
@@ -189,4 +189,3 @@ document.addEventListener("DOMContentLoaded", () => {
         loadMyProfile();
     }
 });
-
