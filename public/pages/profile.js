@@ -1,5 +1,3 @@
-console.log("PROFILE START");
-
 import { supabase } from "/supabase.js";
 
 function goTo(path) {
@@ -8,23 +6,13 @@ function goTo(path) {
 
 console.log("PROFILE JS LOADED");
 
-// Zjistíme, zda se díváme na cizí profil
-const viewedUser = localStorage.getItem("profileUser");
-
-// Spustíme správný režim
-if (viewedUser) {
-    loadOtherUser(viewedUser);
-} else {
-    loadMyProfile();
-}
-
 /* ---------------------------------------------------
-   1) MŮJ PROFIL (přihlášený uživatel)
+   1) FUNKCE – MŮJ PROFIL
 --------------------------------------------------- */
 async function loadMyProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        goTo("/login");
+        goTo("/login.html");
         return;
     }
 
@@ -42,13 +30,12 @@ async function loadMyProfile() {
         avatar_url: profile.avatar_url
     });
 
-    // Umožnit editaci
     document.getElementById("editProfileBtn").style.display = "flex";
     document.getElementById("changeAvatarBtn").style.display = "flex";
 }
 
 /* ---------------------------------------------------
-   2) CIZÍ PROFIL (kliknutí na jméno v chatu)
+   2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
 async function loadOtherUser(username) {
     const { data, error } = await supabase
@@ -70,13 +57,12 @@ async function loadOtherUser(username) {
         avatar_url: data.avatar_url
     });
 
-    // Zakázat editaci cizího profilu
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("changeAvatarBtn").style.display = "none";
 }
 
 /* ---------------------------------------------------
-   3) FUNKCE PRO ZOBRAZENÍ PROFILU
+   3) FUNKCE – RENDER PROFILU
 --------------------------------------------------- */
 function renderProfile(data) {
     document.getElementById("emailDisplay").textContent = data.email;
@@ -92,7 +78,7 @@ function renderProfile(data) {
 }
 
 /* ---------------------------------------------------
-   4) ZMĚNA AVATARU (jen můj profil)
+   4) ZMĚNA AVATARU
 --------------------------------------------------- */
 document.getElementById("changeAvatarBtn").onclick = () => {
     document.getElementById("avatarInput").click();
@@ -135,8 +121,59 @@ document.getElementById("avatarInput").onchange = async (e) => {
 };
 
 /* ---------------------------------------------------
-   5) OSTATNÍ TLAČÍTKA
+   5) TLAČÍTKA
 --------------------------------------------------- */
-document.get
+document.getElementById("logoutBtn").onclick = async () => {
+    await supabase.auth.signOut();
+    goTo("/login.html");
+};
 
-console.log("PROFILE END");
+document.getElementById("chatBtn").onclick = () => {
+    localStorage.removeItem("profileUser");
+    goTo("/chat.html");
+};
+
+document.getElementById("editProfileBtn").onclick = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data } = await supabase
+        .from("profiles")
+        .select("username, bio")
+        .eq("id", user.id)
+        .single();
+
+    document.getElementById("modalUsername").value = data.username || "";
+    document.getElementById("modalBio").value = data.bio || "";
+
+    document.getElementById("editModal").style.display = "flex";
+};
+
+document.getElementById("closeModalBtn").onclick = () => {
+    document.getElementById("editModal").style.display = "none";
+};
+
+document.getElementById("saveProfileBtn").onclick = async () => {
+    const newUsername = document.getElementById("modalUsername").value;
+    const newBio = document.getElementById("modalBio").value;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
+        .from("profiles")
+        .update({ username: newUsername, bio: newBio })
+        .eq("id", user.id);
+
+    document.getElementById("editModal").style.display = "none";
+    loadMyProfile();
+};
+
+/* ---------------------------------------------------
+   6) SPUŠTĚNÍ PROFILU
+--------------------------------------------------- */
+const viewedUser = localStorage.getItem("profileUser");
+
+if (viewedUser) {
+    loadOtherUser(viewedUser);
+} else {
+    loadMyProfile();
+}
