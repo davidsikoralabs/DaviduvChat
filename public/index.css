@@ -98,10 +98,9 @@ body {
 }
 
 .profile-buttons button {
-    flex: 1;
-    min-width: 110px; /* přidá minimální šířku */
-    padding: 12px 0;  /* větší výška */
-    font-size: 15px;  /* větší text */
+    padding: 12px 20px;
+    font-size: 15px;
+    width: auto;
 }
 
 #editProfileBtn {
