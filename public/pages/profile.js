@@ -135,12 +135,12 @@ document.getElementById("avatarInput").onchange = async (e) => {
 --------------------------------------------------- */
 document.getElementById("logoutBtn").onclick = async () => {
     await supabase.auth.signOut();
-    goTo("/login");
+    goTo("/pages/login.html");
 };
 
 document.getElementById("chatBtn").onclick = () => {
     localStorage.removeItem("profileUser");
-    goTo("/chat.html");
+    goTo("/pages/chat.html");
 };
 
 document.getElementById("editProfileBtn").onclick = async () => {
