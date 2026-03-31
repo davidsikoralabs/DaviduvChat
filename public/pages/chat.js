@@ -103,7 +103,7 @@ document.addEventListener("click", (e) => {
   if (e.target.classList.contains("clickable-user")) {
       const userId = e.target.dataset.userid;
       localStorage.setItem("profileUser", userId);
-      window.location.href = "/pages/profile.html";
+      window.location.href = "profile.html";
   }
 });
 
