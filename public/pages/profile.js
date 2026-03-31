@@ -1,3 +1,5 @@
+console.log("PROFILE START");
+
 import { supabase } from "/supabase.js";
 
 function goTo(path) {
@@ -136,3 +138,5 @@ document.getElementById("avatarInput").onchange = async (e) => {
    5) OSTATNÍ TLAČÍTKA
 --------------------------------------------------- */
 document.get
+
+console.log("PROFILE END");
