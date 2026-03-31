@@ -1,58 +1,76 @@
-<script type="module" src="/pages/profile.js"></script>
+<!DOCTYPE html>
+<html lang="cs">
 
-<div class="profile-wrapper">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení</title>
 
-    <div class="profile-card">
+    <!-- 🔥 Tohle tam musí být -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+</head>
 
-    <img id="avatar" class="avatar" src="/assets/avatar-placeholder.png">
+<body>
+    <script type="module" src="/pages/profile.js"></script>
 
-    <button id="changeAvatarBtn" class="change-photo">Změnit fotku</button>
-    <input type="file" id="avatarInput" accept="image/*" style="display:none">
+    <div class="profile-wrapper">
 
-    <h2 id="usernameDisplay" class="username"></h2>
-    <p id="bioDisplay" class="bio"></p>
+        <div class="profile-card">
 
-    <div class="profile-info">
-        <div>Email: <span id="emailDisplay"></span></div>
-        <div>Registrován: <span id="createdAtDisplay"></span></div>
-    </div>
+            <img id="avatar" class="avatar" src="/assets/avatar-placeholder.png">
 
-    <div class="profile-stats">
-        <div class="stat">
-            <span id="roomsCount">0</span>
-            <label>Místnosti</label>
+            <button id="changeAvatarBtn" class="change-photo">Změnit fotku</button>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
+
+            <h2 id="usernameDisplay" class="username"></h2>
+            <p id="bioDisplay" class="bio"></p>
+
+            <div class="profile-info">
+                <div>Email: <span id="emailDisplay"></span></div>
+                <div>Registrován: <span id="createdAtDisplay"></span></div>
+            </div>
+
+            <div class="profile-stats">
+                <div class="stat">
+                    <span id="roomsCount">0</span>
+                    <label>Místnosti</label>
+                </div>
+                <div class="stat">
+                    <span id="messagesCount">0</span>
+                    <label>Zprávy</label>
+                </div>
+            </div>
+
+            <div class="profile-buttons">
+                <button id="editProfileBtn">Upravit profil</button>
+                <button id="chatBtn" class="chat">Chat</button>
+                <button id="logoutBtn" class="logout">Odhlásit se</button>
+            </div>
+
         </div>
-        <div class="stat">
-            <span id="messagesCount">0</span>
-            <label>Zprávy</label>
+
+        <!-- MODAL BACKDROP -->
+        <div id="editModal" class="modal-backdrop">
+            <div class="modal">
+                <h3>Upravit profil</h3>
+
+                <label>Uživatelské jméno</label>
+                <input type="text" id="modalUsername">
+
+                <label>Bio</label>
+                <textarea id="modalBio"></textarea>
+
+                <div class="modal-buttons">
+                    <button id="saveProfileBtn" class="save">Uložit</button>
+                    <button id="closeModalBtn" class="cancel">Zrušit</button>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="profile-buttons">
-        <button id="editProfileBtn">Upravit profil</button>
-        <button id="chatBtn" class="chat">Chat</button>
-        <button id="logoutBtn" class="logout">Odhlásit se</button>
-    </div>
+        <!-- 🔥 MUSÍ BÝT DRUHÉ – modul s importy -->
+        <script type="module" src="/pages/profile.js"></script>
 
-</div>
+</body>
 
-<!-- MODAL BACKDROP -->
-<div id="editModal" class="modal-backdrop">
-    <div class="modal">
-        <h3>Upravit profil</h3>
-
-        <label>Uživatelské jméno</label>
-        <input type="text" id="modalUsername">
-
-        <label>Bio</label>
-        <textarea id="modalBio"></textarea>
-
-        <div class="modal-buttons">
-            <button id="saveProfileBtn" class="save">Uložit</button>
-            <button id="closeModalBtn" class="cancel">Zrušit</button>
-        </div>
-    </div>
-</div>
-
-<!-- 🔥 MUSÍ BÝT DRUHÉ – modul s importy -->
-<script type="module" src="/pages/profile.js"></script>
+</html>

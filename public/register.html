@@ -1,27 +1,44 @@
-<div class="auth-wrapper">
+<!DOCTYPE html>
+<html lang="cs">
 
-    <div class="auth-card">
-        <h2>Registrace</h2>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení</title>
 
-        <label>Uživatelské jméno</label>
-        <input id="regUsername" type="text" placeholder="Vaše přezdívka">
+    <!-- 🔥 Tohle tam musí být -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+</head>
 
-        <label>Email</label>
-        <input id="regEmail" type="email" placeholder="Váš email">
+<body>
+    <div class="auth-wrapper">
 
-        <label>Heslo</label>
-        <input id="regPassword" type="password" placeholder="Zvolte heslo">
+        <div class="auth-card">
+            <h2>Registrace</h2>
 
-        <label>Potvrzení hesla</label>
-        <input id="regPassword2" type="password" placeholder="Zadejte heslo znovu">
+            <label>Uživatelské jméno</label>
+            <input id="regUsername" type="text" placeholder="Vaše přezdívka">
 
-        <button id="registerBtn">Vytvořit účet</button>
+            <label>Email</label>
+            <input id="regEmail" type="email" placeholder="Váš email">
 
-        <div class="auth-links">
-            <a onclick="goTo('/login')">Máte účet? Přihlášení</a>
+            <label>Heslo</label>
+            <input id="regPassword" type="password" placeholder="Zvolte heslo">
+
+            <label>Potvrzení hesla</label>
+            <input id="regPassword2" type="password" placeholder="Zadejte heslo znovu">
+
+            <button id="registerBtn">Vytvořit účet</button>
+
+            <div class="auth-links">
+                <a onclick="goTo('/login')">Máte účet? Přihlášení</a>
+            </div>
         </div>
+
     </div>
 
-</div>
+    <script type="module" src="/pages/register.js"></script>
+</body>
 
-<script type="module" src="/pages/register.js"></script>
+</html>

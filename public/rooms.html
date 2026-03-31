@@ -1,125 +1,142 @@
-<div class="page-wrapper">
+<!DOCTYPE html>
+<html lang="cs">
 
-    <h1 style="text-align:center; margin-bottom: 20px;">Chat – výběr místnosti</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení</title>
 
-    <p>Přihlášen jako: <strong id="currentUser"></strong></p>
+    <!-- 🔥 Tohle tam musí být -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+</head>
 
-    <h2>Místnosti</h2>
-    <div id="rooms"></div>
+<body>
+    <div class="page-wrapper">
 
-    <h3>Vytvořit novou místnost</h3>
-    <input id="newRoomName" type="text" placeholder="Název místnosti">
-    <input id="adminPassword" type="password" placeholder="Admin heslo (1234)">
-    <button id="createRoomBtn">Vytvořit</button>
+        <h1 style="text-align:center; margin-bottom: 20px;">Chat – výběr místnosti</h1>
 
-</div>
+        <p>Přihlášen jako: <strong id="currentUser"></strong></p>
 
-<script type="module">
-    import { supabase } from "/supabase.js";
+        <h2>Místnosti</h2>
+        <div id="rooms"></div>
 
-    // 1) Získáme přihlášeného uživatele
-    const { data: { user } } = await supabase.auth.getUser();
+        <h3>Vytvořit novou místnost</h3>
+        <input id="newRoomName" type="text" placeholder="Název místnosti">
+        <input id="adminPassword" type="password" placeholder="Admin heslo (1234)">
+        <button id="createRoomBtn">Vytvořit</button>
 
-    if (!user) {
-        // není přihlášený → pryč na login
-        window.location.href = "/pages/login.html";
-    }
+    </div>
 
-    // 2) Username z profilu nebo emailu
-    const username =
-        user.user_metadata?.username ||
-        user.email.split("@")[0];
+    <script type="module">
+        import { supabase } from "/supabase.js";
 
-    // 3) Zobrazíme ho v UI
-    document.getElementById("currentUser").textContent = username;
+        // 1) Získáme přihlášeného uživatele
+        const { data: { user } } = await supabase.auth.getUser();
 
-    // 4) Uložíme ho pro chat.js
-    localStorage.setItem("username", username);
+        if (!user) {
+            // není přihlášený → pryč na login
+            window.location.href = "/pages/login.html";
+        }
 
-    // 5) Načtení místností
-    async function loadRooms() {
-        const res = await fetch("/api/rooms");
-        const rooms = await res.json();
+        // 2) Username z profilu nebo emailu
+        const username =
+            user.user_metadata?.username ||
+            user.email.split("@")[0];
 
-        const container = document.getElementById("rooms");
-        container.innerHTML = "";
+        // 3) Zobrazíme ho v UI
+        document.getElementById("currentUser").textContent = username;
 
-        rooms.forEach(room => {
-            const div = document.createElement("div");
-            div.className = "room";
+        // 4) Uložíme ho pro chat.js
+        localStorage.setItem("username", username);
 
-            div.innerHTML = `
+        // 5) Načtení místností
+        async function loadRooms() {
+            const res = await fetch("/api/rooms");
+            const rooms = await res.json();
+
+            const container = document.getElementById("rooms");
+            container.innerHTML = "";
+
+            rooms.forEach(room => {
+                const div = document.createElement("div");
+                div.className = "room";
+
+                div.innerHTML = `
                 <span class="roomName">${room.name} (${room.users} online)</span>
                 <button class="deleteRoom" data-id="${room.id}">×</button>
             `;
 
-            // kliknutí na název → vstup do místnosti
-            div.querySelector(".roomName").onclick = () => enterRoom(room.id);
+                // kliknutí na název → vstup do místnosti
+                div.querySelector(".roomName").onclick = () => enterRoom(room.id);
 
-            container.appendChild(div);
-        });
-    }
-
-    loadRooms();
-
-    // 6) Vstup do místnosti
-    function enterRoom(roomId) {
-        localStorage.setItem("roomId", roomId);
-        window.location.href = "/chat";
-    }
-
-    // 7) Vytvoření místnosti
-    document.getElementById("createRoomBtn").onclick = async () => {
-        const name = document.getElementById("newRoomName").value.trim();
-        const password = document.getElementById("adminPassword").value.trim();
-
-        if (!name || !password) {
-            alert("Vyplňte název i heslo!");
-            return;
+                container.appendChild(div);
+            });
         }
 
-        const res = await fetch("/api/rooms", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, password })
-        });
+        loadRooms();
 
-        const data = await res.json();
-
-        if (data.error) {
-            alert(data.error);
-        } else {
-            alert("Místnost vytvořena!");
-            loadRooms();
+        // 6) Vstup do místnosti
+        function enterRoom(roomId) {
+            localStorage.setItem("roomId", roomId);
+            window.location.href = "/chat";
         }
-    };
 
-    // 8) Mazání místnosti
-    document.addEventListener("click", async (e) => {
-        if (e.target.classList.contains("deleteRoom")) {
-            e.stopPropagation();
+        // 7) Vytvoření místnosti
+        document.getElementById("createRoomBtn").onclick = async () => {
+            const name = document.getElementById("newRoomName").value.trim();
+            const password = document.getElementById("adminPassword").value.trim();
 
-            const id = e.target.dataset.id;
-            const password = prompt("Zadejte admin heslo pro smazání místnosti:");
+            if (!name || !password) {
+                alert("Vyplňte název i heslo!");
+                return;
+            }
 
-            if (!password) return;
-
-            const res = await fetch(`/api/rooms/${id}`, {
-                method: "DELETE",
+            const res = await fetch("/api/rooms", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ name, password })
             });
 
             const data = await res.json();
 
-            if (data.success) {
-                alert("Místnost byla smazána.");
-                loadRooms();
-            } else {
+            if (data.error) {
                 alert(data.error);
+            } else {
+                alert("Místnost vytvořena!");
+                loadRooms();
             }
-        }
-    });
-</script>
+        };
 
-<script type="module" src="/pages/rooms.js"></script>
+        // 8) Mazání místnosti
+        document.addEventListener("click", async (e) => {
+            if (e.target.classList.contains("deleteRoom")) {
+                e.stopPropagation();
+
+                const id = e.target.dataset.id;
+                const password = prompt("Zadejte admin heslo pro smazání místnosti:");
+
+                if (!password) return;
+
+                const res = await fetch(`/api/rooms/${id}`, {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("Místnost byla smazána.");
+                    loadRooms();
+                } else {
+                    alert(data.error);
+                }
+            }
+        });
+    </script>
+
+    <script type="module" src="/pages/rooms.js"></script>
+</body>
+
+</html>
