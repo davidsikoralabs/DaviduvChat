@@ -1,5 +1,9 @@
 import { supabase } from "/supabase.js";
 
+function goTo(path) {
+    window.location.href = path;
+}
+
 console.log("PROFILE JS LOADED");
 
 // Zjistíme, zda se díváme na cizí profil

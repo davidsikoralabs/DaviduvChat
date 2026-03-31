@@ -12,6 +12,12 @@ if (!username || !roomId) {
 
 document.getElementById("roomTitle").textContent = "Místnost: " + roomId;
 
+document.getElementById("goToProfile").onclick = () => {
+    localStorage.removeItem("profileUser");
+    window.location.href = "/profile.html";
+};
+
+
 const socket = io("https://daviduvchat.onrender.com");
 
 socket.emit("joinRoom", { username, roomId });
@@ -103,8 +109,4 @@ document.addEventListener("click", (e) => {
 
 document.getElementById("backToRooms").onclick = () => {
   window.location.href = "/rooms.html";
-};
-
-document.getElementById("goToProfile").onclick = () => {
-  window.location.href = "/profile.html";
 };
