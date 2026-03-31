@@ -12,6 +12,16 @@ body {
     background: #c6c6c6;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+.profile-card .avatar,
+.profile-card .change-photo,
+.profile-card .username,
+.profile-card .bio,
+.profile-card .profile-info,
+.profile-card .profile-stats,
+.profile-card .profile-buttons {
     text-align: center;
 }
 
