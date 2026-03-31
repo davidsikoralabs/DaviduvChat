@@ -54,22 +54,22 @@ async function router() {
     return;
     }
     if (route === "/rooms") {
-    await loadPage("/pages/rooms.html");
+    await loadPage("/rooms.html");
     }
     else if (route === "/login") {
-        await loadPage("/pages/login.html");
+        await loadPage("/login.html");
     }
     else if (route === "/register") {
-        await loadPage("/pages/register.html");
+        await loadPage("/register.html");
     }
     else if (route.startsWith("/profile")) {
-        await loadPage("/pages/profile.html");
+        await loadPage("/profile.html");
     }
     else if (route === "/reset-password") {
-        await loadPage("/pages/reset-password.html");
+        await loadPage("/reset-password.html");
     }
     else {
-        await loadPage("/pages/rooms.html"); // fallback
+        await loadPage("/rooms.html"); // fallback
     }
 }
 
