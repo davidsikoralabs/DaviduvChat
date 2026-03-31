@@ -180,10 +180,13 @@ document.getElementById("saveProfileBtn").onclick = async () => {
 /* ---------------------------------------------------
    6) SPUŠTĚNÍ PROFILU
 --------------------------------------------------- */
-const viewedUser = localStorage.getItem("profileUser");
+document.addEventListener("DOMContentLoaded", () => {
+    const viewedUser = localStorage.getItem("profileUser");
 
-if (viewedUser) {
-    loadOtherUser(viewedUser);
-} else {
-    loadMyProfile();
-}
+    if (viewedUser) {
+        loadOtherUser(viewedUser);
+    } else {
+        loadMyProfile();
+    }
+});
+
