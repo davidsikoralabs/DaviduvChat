@@ -36,12 +36,15 @@ body {
     box-shadow: 0 0 0 3px #6711e8;
 }
 
-/* Změnit fotku */
+.profile-card {
+    position: relative;
+}
+
 .change-photo {
     position: absolute;
-    top: 135px;  
-    left: 50%;       
-    transform: translateX(-60%); 
+    top: 95px;          
+    left: 50%;          
+    transform: translateX(-58%); 
     background: none;
     border: none;
     color: #6711e8;
