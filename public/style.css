@@ -106,8 +106,9 @@ button:hover {
   margin: 8px 0;
 }
 
-
-/* ====== MOBILNÍ VERZE ====== */
+.clickable-user {
+  cursor: pointer;
+}
 
 /* TABLETY + ROZLOŽENÝ FOLD */
 @media (max-width: 900px) {

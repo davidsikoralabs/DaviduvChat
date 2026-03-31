@@ -66,7 +66,8 @@ function addMessage(msg) {
   div.dataset.id = msg.id; // důležité pro mazání
 
   let html = `
-    <span class="user" style="color:${msg.color}">${msg.user}</span>
+    <span class="user clickable-user" data-user="${msg.user}" style="color:${msg.color}">
+  ${msg.user}</span>
     <span class="text" style="color:${msg.color}">${msg.text}</span>
     <span class="time">(${msg.time})</span>
   `;
@@ -93,12 +94,17 @@ document.addEventListener("click", (e) => {
     const id = e.target.dataset.id;
     socket.emit("deleteMessage", id);
   }
+  if (e.target.classList.contains("clickable-user")) {
+    const user = e.target.dataset.user;
+    localStorage.setItem("profileUser", user);
+    window.location.href = "/profile.html";
+  }
 });
 
 document.getElementById("backToRooms").onclick = () => {
-    window.location.href = "/rooms.html";
+  window.location.href = "/rooms.html";
 };
 
 document.getElementById("goToProfile").onclick = () => {
-    window.location.href = "/profile.html";
+  window.location.href = "/profile.html";
 };

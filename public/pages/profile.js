@@ -132,5 +132,6 @@ document.getElementById("saveProfileBtn").onclick = async () => {
     loadProfile();
 };
 
+const viewedUser = localStorage.getItem("profileUser");
 
 loadProfile();
