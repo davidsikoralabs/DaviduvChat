@@ -130,7 +130,7 @@ document.getElementById("logoutBtn").onclick = async () => {
 
 document.getElementById("chatBtn").onclick = () => {
     localStorage.removeItem("profileUser");
-    goTo("/chat");
+    goTo("/chat.html");
 };
 
 document.getElementById("editProfileBtn").onclick = async () => {
