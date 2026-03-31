@@ -1,3 +1,18 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení</title>
+
+    <!-- 🔥 Tohle tam musí být -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+
 <div class="auth-wrapper">
 
     <div class="auth-card">
@@ -12,12 +27,14 @@
         <button id="loginBtn">Přihlásit se</button>
 
         <div class="auth-links">
-            <a onclick="goTo('/register.html')">Nemáte účet? Registrace</a>
-            <a onclick="goTo('/reset-password.html')">Zapomenuté heslo</a>
+            <a onclick="window.location.href='/register.html'">Nemáte účet? Registrace</a>
+            <a onclick="window.location.href='/reset-password.html'">Zapomenuté heslo</a>
         </div>
     </div>
 
 </div>
 
-<!-- 🔥 MUSÍ BÝT DRUHÉ – modul s importy -->
 <script type="module" src="/pages/login.js"></script>
+
+</body>
+</html>
