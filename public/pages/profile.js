@@ -38,25 +38,35 @@ async function loadMyProfile() {
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
 async function loadOtherUser(username) {
-    const { data, error } = await supabase
+
+    // 1) Najdeme profil podle username
+    const { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("username", username)
         .single();
 
-    if (error || !data) {
+    if (error || !profile) {
         console.error("Profil nenalezen:", error);
         return;
     }
 
+    // 2) Najdeme auth uživatele podle ID
+    const { data: authUser } = await supabase
+        .from("auth_users_view") // vysvětlím níže
+        .select("email, created_at")
+        .eq("id", profile.id)
+        .single();
+
     renderProfile({
-        email: data.email || "Skryto",
-        created_at: data.created_at,
-        username: data.username,
-        bio: data.bio,
-        avatar_url: data.avatar_url
+        email: authUser?.email || "Skryto",
+        created_at: authUser?.created_at || new Date(),
+        username: profile.username,
+        bio: profile.bio,
+        avatar_url: profile.avatar_url
     });
 
+    // 3) Skryj tlačítka
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("changeAvatarBtn").style.display = "none";
 }
