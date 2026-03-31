@@ -30,5 +30,5 @@ document.getElementById("loginBtn").onclick = async () => {
 
     // 🔥 TADY JE OPRAVA
     localStorage.removeItem("profileUser");
-    goTo("/profile.html");
+    window.location.href = "/profile.html";
 };
