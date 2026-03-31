@@ -2,7 +2,20 @@ import { supabase } from "/supabase.js";
 
 console.log("PROFILE JS LOADED");
 
-async function loadProfile() {
+// Zjistíme, zda se díváme na cizí profil
+const viewedUser = localStorage.getItem("profileUser");
+
+// Spustíme správný režim
+if (viewedUser) {
+    loadOtherUser(viewedUser);
+} else {
+    loadMyProfile();
+}
+
+/* ---------------------------------------------------
+   1) MŮJ PROFIL (přihlášený uživatel)
+--------------------------------------------------- */
+async function loadMyProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         goTo("/login");
@@ -15,20 +28,66 @@ async function loadProfile() {
         .eq("id", user.id)
         .single();
 
-    document.getElementById("emailDisplay").textContent = user.email;
-    document.getElementById("createdAtDisplay").textContent =
-        new Date(user.created_at).toLocaleDateString("cs-CZ");
+    renderProfile({
+        email: user.email,
+        created_at: user.created_at,
+        username: profile.username,
+        bio: profile.bio,
+        avatar_url: profile.avatar_url
+    });
 
-    document.getElementById("usernameDisplay").textContent = profile.username;
-    document.getElementById("bioDisplay").textContent = profile.bio || "Bez popisu";
+    // Umožnit editaci
+    document.getElementById("editProfileBtn").style.display = "flex";
+    document.getElementById("changeAvatarBtn").style.display = "flex";
+}
 
-    if (profile.avatar_url) {
-        document.getElementById("avatar").src = profile.avatar_url;
+/* ---------------------------------------------------
+   2) CIZÍ PROFIL (kliknutí na jméno v chatu)
+--------------------------------------------------- */
+async function loadOtherUser(username) {
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("username", username)
+        .single();
+
+    if (error || !data) {
+        console.error("Profil nenalezen:", error);
+        return;
     }
-    
-};
 
-// ZMĚNA AVATARU
+    renderProfile({
+        email: data.email || "Skryto",
+        created_at: data.created_at,
+        username: data.username,
+        bio: data.bio,
+        avatar_url: data.avatar_url
+    });
+
+    // Zakázat editaci cizího profilu
+    document.getElementById("editProfileBtn").style.display = "none";
+    document.getElementById("changeAvatarBtn").style.display = "none";
+}
+
+/* ---------------------------------------------------
+   3) FUNKCE PRO ZOBRAZENÍ PROFILU
+--------------------------------------------------- */
+function renderProfile(data) {
+    document.getElementById("emailDisplay").textContent = data.email;
+    document.getElementById("createdAtDisplay").textContent =
+        new Date(data.created_at).toLocaleDateString("cs-CZ");
+
+    document.getElementById("usernameDisplay").textContent = data.username;
+    document.getElementById("bioDisplay").textContent = data.bio || "Bez popisu";
+
+    if (data.avatar_url) {
+        document.getElementById("avatar").src = data.avatar_url;
+    }
+}
+
+/* ---------------------------------------------------
+   4) ZMĚNA AVATARU (jen můj profil)
+--------------------------------------------------- */
 document.getElementById("changeAvatarBtn").onclick = () => {
     document.getElementById("avatarInput").click();
 };
@@ -38,30 +97,23 @@ document.getElementById("avatarInput").onchange = async (e) => {
     if (!file) return;
 
     const { data: { user } } = await supabase.auth.getUser();
-
     const fileName = `${user.id}-${Date.now()}`;
 
-    // 1) Upload do Storage
     const { error: uploadError } = await supabase.storage
         .from("avatar")
-        .upload(fileName, file, {
-            cacheControl: "3600",
-            upsert: true
-        });
+        .upload(fileName, file, { cacheControl: "3600", upsert: true });
 
     if (uploadError) {
         alert("Chyba při nahrávání obrázku.");
         return;
     }
 
-    // 2) Získání veřejné URL
     const { data: publicUrlData } = supabase.storage
         .from("avatar")
         .getPublicUrl(fileName);
 
     const avatarUrl = publicUrlData.publicUrl;
 
-    // 3) Uložení do profilu
     const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
@@ -72,66 +124,11 @@ document.getElementById("avatarInput").onchange = async (e) => {
         return;
     }
 
-    // 4) Aktualizace UI
     document.getElementById("avatar").src = avatarUrl;
     alert("Avatar aktualizován!");
 };
 
-document.getElementById("logoutBtn").onclick = async () => {
-    await supabase.auth.signOut();
-    goTo("/login");
-};
-
-document.getElementById("chatBtn").onclick = () => {
-    goTo("/chat");
-};
-
-// Otevření modalu
-document.getElementById("editProfileBtn").onclick = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // Načteme aktuální data
-    const { data } = await supabase
-        .from("profiles")
-        .select("username, bio")
-        .eq("id", user.id)
-        .single();
-
-    // Předvyplníme modal
-    document.getElementById("modalUsername").value = data.username || "";
-    document.getElementById("modalBio").value = data.bio || "";
-
-    // Zobrazíme modal
-    document.getElementById("editModal").style.display = "flex";
-};
-
-// Zavření modalu
-document.getElementById("closeModalBtn").onclick = () => {
-    document.getElementById("editModal").style.display = "none";
-};
-
-// Uložení změn
-document.getElementById("saveProfileBtn").onclick = async () => {
-    const newUsername = document.getElementById("modalUsername").value;
-    const newBio = document.getElementById("modalBio").value;
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    await supabase
-        .from("profiles")
-        .update({
-            username: newUsername,
-            bio: newBio
-        })
-        .eq("id", user.id);
-
-    // Zavřít modal
-    document.getElementById("editModal").style.display = "none";
-
-    // Aktualizovat profil
-    loadProfile();
-};
-
-const viewedUser = localStorage.getItem("profileUser");
-
-loadProfile();
+/* ---------------------------------------------------
+   5) OSTATNÍ TLAČÍTKA
+--------------------------------------------------- */
+document.get
