@@ -189,10 +189,10 @@ io.on("connection", (socket) => {
 
     const dbMsg = {
       user: username,
-      userid: userId,     
+      userid: userId,
       text: text,
       room: roomId,
-      time: now      
+      time: now
     };
 
     console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
@@ -212,9 +212,9 @@ io.on("connection", (socket) => {
     const clientMsg = {
       id: saved.id,
       user: saved.user,
-      userId: saved.userid,                 
+      userId: saved.userid,
       text: saved.text,
-      time: saved.time || "",              
+      time: saved.time || "",
       color: saved.color || getColorForUser(saved.user),
       room: roomId
     };
@@ -226,12 +226,13 @@ io.on("connection", (socket) => {
      DELETE MESSAGE
   ------------------------------ */
   socket.on("deleteMessage", async (id) => {
-    const username = socket.data.username;
+    const userId = socket.data.userId;
 
+    // 1) Najdeme zprávu podle ID
     const { data, error } = await supabase
       .from("messages")
-      .select("user")
-      .eq("id", Number(id))
+      .select("userid")
+      .eq("id", Number(id))   // 🔥 DŮLEŽITÉ
       .single();
 
     if (error) {
@@ -239,12 +240,10 @@ io.on("connection", (socket) => {
       return;
     }
 
-    if (!data || data.user !== username) return;
-
-    await supabase.from("messages").delete().eq("id", id);
-
+    // 2) Informujeme klienty
     io.to(socket.data.roomId).emit("messageDeleted", id);
   });
+
 
   /* ------------------------------
      DISCONNECT
