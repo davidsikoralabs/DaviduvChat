@@ -92,10 +92,17 @@
                 return;
             }
 
+            // vytvoření ID z názvu
+            const id = name
+                .toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // odstraní diakritiku
+                .replace(/\s+/g, "-") // mezery → pomlčky
+                .replace(/[^a-z0-9\-]/g, ""); // odstraní divné znaky
+
             const res = await fetch("/api/rooms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, password })
+                body: JSON.stringify({ id, name }) 
             });
 
             const data = await res.json();
@@ -107,6 +114,7 @@
                 loadRooms();
             }
         };
+
 
         // 8) Mazání místnosti
         document.addEventListener("click", async (e) => {
