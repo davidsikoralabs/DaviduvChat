@@ -131,6 +131,7 @@ io.on("connection", (socket) => {
      SEND MESSAGE
   ------------------------------ */
   socket.on("sendMessage", async (text) => {
+  console.log("📥 SERVER DOSTAL EVENT sendMessage:", text);
   console.log("📩 RAW SEND MESSAGE INPUT:", text);
   console.log("📌 socket.data:", socket.data);
 

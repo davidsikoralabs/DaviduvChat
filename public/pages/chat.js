@@ -67,9 +67,16 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
+  console.log("📤 ODESÍLÁM ZPRÁVU:", text);
+  console.log("📡 socket.connected =", socket.connected);
+
   socket.emit("sendMessage", text);
+
+  console.log("📨 EVENT ODESLÁN");
+
   input.value = "";
 }
+
 
 // VYKRESLENÍ ZPRÁVY
 function addMessage(msg) {
