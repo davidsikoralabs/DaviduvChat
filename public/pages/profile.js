@@ -37,12 +37,11 @@ async function loadMyProfile() {
 /* ---------------------------------------------------
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
+// 1) Najdeme profil podle ID
 async function loadOtherUser(userId) {
-
-    // 1) Najdeme profil podle ID
     const { data: profile, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("username, bio, avatar_url, email, created_at")
         .eq("id", userId)
         .single();
 
@@ -51,25 +50,17 @@ async function loadOtherUser(userId) {
         return;
     }
 
-    // 2) Najdeme auth uživatele podle ID
-    const { data: authUser } = await supabase
-        .from("auth_users_view")
-        .select("email, created_at")
-        .eq("id", userId)
-        .single();
-
     renderProfile({
-        email: authUser?.email || "Skryto",
-        created_at: authUser?.created_at || new Date(),
+        email: profile.email || "Skryto",
+        created_at: profile.created_at || new Date(),
         username: profile.username,
         bio: profile.bio,
         avatar_url: profile.avatar_url
     });
-
-    // 3) Skryj tlačítka
-    document.getElementById("editProfileBtn").style.display = "none";
-    document.getElementById("changeAvatarBtn").style.display = "none";
 }
+// 3) Skryj tlačítka
+document.getElementById("editProfileBtn").style.display = "none";
+document.getElementById("changeAvatarBtn").style.display = "none";
 
 /* ---------------------------------------------------
    3) FUNKCE – RENDER PROFILU

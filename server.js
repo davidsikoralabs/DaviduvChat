@@ -78,6 +78,7 @@ io.on("connection", (socket) => {
      JOIN ROOM
   ------------------------------ */
   socket.on("joinRoom", async ({ username, userId, roomId }) => {
+    console.log("JOIN:", username, userId);
     const room = rooms.find((r) => r.id === roomId);
     if (!room) {
       socket.emit("errorMessage", "Místnost neexistuje");
