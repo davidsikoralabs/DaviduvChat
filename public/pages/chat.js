@@ -113,6 +113,12 @@ function switchRoom(newRoomId) {
 
 // KLIK NA UŽIVATELE
 document.getElementById("chat").addEventListener("click", (e) => {
+    if (e.target.classList.contains("delete-btn")) {
+        const id = e.target.dataset.id;
+        socket.emit("deleteMessage", id);
+        return;
+    }
+
     const userEl = e.target.closest(".clickable-user");
     if (userEl) {
         const userId = userEl.dataset.user;
