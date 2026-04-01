@@ -51,10 +51,37 @@ socket.on("roomUserCount", ({ roomId: id, count }) => {
 });
 
 // SMAZÁNÍ ZPRÁVY
-socket.on("messageDeleted", (id) => {
-  const el = document.querySelector(`[data-id="${id}"]`)?.closest(".msg");
-  if (el) el.remove();
+socket.on("deleteMessage", async (id) => {
+  const userId = socket.data.userId;
+
+  // 1) Najdeme zprávu podle ID
+  const { data, error } = await supabase
+    .from("messages")
+    .select("userid")
+    .eq("id", Number(id))   // 🔥 DŮLEŽITÉ
+    .single();
+
+  if (error) {
+    console.error("Chyba při ověřování zprávy pro smazání:", error);
+    return;
+  }
+
+  // 2) Kontrola, že zpráva patří uživateli
+  if (!data || data.userid !== userId) {
+    console.warn("❌ Uživateli tato zpráva nepatří, nelze smazat");
+    return;
+  }
+
+  // 3) Smazání zprávy
+  await supabase
+    .from("messages")
+    .delete()
+    .eq("id", Number(id));
+
+  // 4) Informujeme klienty
+  io.to(socket.data.roomId).emit("messageDeleted", id);
 });
+
 
 // ODESLÁNÍ ZPRÁVY
 document.getElementById("sendButton").onclick = sendMessage;
