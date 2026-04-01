@@ -87,20 +87,20 @@ io.on("connection", (socket) => {
     }
 
     socket.data.username = username || "Anonym";
-    socket.data.userId = userId;      // 🔥 TADY JE userId
+    socket.data.userId = userId;      
     socket.data.roomId = roomId;
 
     // 1) Historie
     const { data: history } = await supabase
       .from("messages")
       .select("*")
-      .eq("room", roomId)
+      .eq("room_id", roomId)
       .order("id", { ascending: true });
 
     const cleaned = history.map((msg) => ({
       id: msg.id,
       user: msg.user,
-      userId: msg.userId,      // 🔥 přidáno
+      userId: msg.user_id,      
       text: msg.text,
       time: msg.time,
       color: msg.color
@@ -123,29 +123,32 @@ io.on("connection", (socket) => {
   /* ------------------------------
      SEND MESSAGE
   ------------------------------ */
-  socket.on("sendMessage", async (text) => {
-    const username = socket.data.username || "Anonym";
-    const userId = socket.data.userId;     // 🔥
-    const roomId = socket.data.roomId;
+socket.on("sendMessage", async (text) => {
+  const username = socket.data.username || "Anonym";
+  const userId = socket.data.userId;
+  const roomId = socket.data.roomId;
 
-    const msg = {
-      user: username,
-      userId: userId,                      // 🔥
-      text,
-      time: new Date().toLocaleTimeString("cs-CZ"),
-      color: getColorForUser(username),
-      room: roomId
-    };
+  const msg = {
+    user: username,
+    user_id: userId,
+    text: text,
+    room_id: roomId
+  };
 
-    const { data, error } = await supabase
-      .from("messages")
-      .insert(msg)
-      .select();
+  const { data, error } = await supabase
+    .from("messages")
+    .insert(msg)
+    .select();
 
-    const saved = data?.[0] || msg;
+  if (error) {
+    console.error("❌ SUPABASE INSERT ERROR:", error);
+  } else {
+    console.log("✅ MESSAGE SAVED:", data);
+  }
 
-    io.to(roomId).emit("receiveMessage", saved);
-  });
+  io.to(roomId).emit("receiveMessage", data?.[0] || msg);
+});
+
 
   /* ------------------------------
      DELETE MESSAGE
