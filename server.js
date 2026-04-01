@@ -7,7 +7,6 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -104,12 +103,10 @@ io.on("connection", (socket) => {
       const cleaned = (history || []).map((msg) => ({
         id: msg.id,
         user: msg.user,
-        userId: msg.user_id,
+        userId: msg.userid,                 // ✅ správný sloupec
         text: msg.text,
-        time: msg.created_at
-          ? new Date(msg.created_at).toLocaleTimeString("cs-CZ")
-          : "",
-        color: getColorForUser(msg.user)
+        time: msg.time || "",              // ✅ používáme sloupec time
+        color: msg.color || getColorForUser(msg.user) // ✅ buď z DB, nebo generovaný
       }));
 
       socket.emit("chatHistory", cleaned);
@@ -131,55 +128,57 @@ io.on("connection", (socket) => {
      SEND MESSAGE
   ------------------------------ */
   socket.on("sendMessage", async (text) => {
-  console.log("📥 SERVER DOSTAL EVENT sendMessage:", text);
-  console.log("📩 RAW SEND MESSAGE INPUT:", text);
-  console.log("📌 socket.data:", socket.data);
+    console.log("📥 SERVER DOSTAL EVENT sendMessage:", text);
+    console.log("📩 RAW SEND MESSAGE INPUT:", text);
+    console.log("📌 socket.data:", socket.data);
 
-  const username = socket.data.username || "Anonym";
-  const userId = socket.data.userId;
-  const roomId = socket.data.roomId;
+    const username = socket.data.username || "Anonym";
+    const userId = socket.data.userId;
+    const roomId = socket.data.roomId;
 
-  if (!roomId || !userId) {
-    console.error("❌ Chybí roomId nebo userId při odesílání zprávy");
-    return;
-  }
+    if (!roomId || !userId) {
+      console.error("❌ Chybí roomId nebo userId při odesílání zprávy");
+      return;
+    }
 
-  const dbMsg = {
-    user: username,
-    userid: userId,
-    text: text,
-    room: roomId
-  };
+    const now = new Date().toLocaleTimeString("cs-CZ");
 
-  console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
+    const dbMsg = {
+      user: username,
+      userid: userId,     // ✅ přesně jako v DB
+      text: text,
+      room: roomId,
+      time: now           // ✅ zapisujeme time (máš ho v tabulce)
+      // color necháme null, nebo můžeš přidat:
+      // color: getColorForUser(username)
+    };
 
-  const { data, error } = await supabase
-    .from("messages")
-    .insert(dbMsg)
-    .select();
+    console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
 
-  if (error) {
-    console.error("❌ SUPABASE INSERT ERROR:", error);
-    return;
-  }
+    const { data, error } = await supabase
+      .from("messages")
+      .insert(dbMsg)
+      .select();
 
-  const saved = data?.[0];
+    if (error) {
+      console.error("❌ SUPABASE INSERT ERROR:", error);
+      return;
+    }
 
-  const clientMsg = {
-    id: saved.id,
-    user: saved.user,
-    userId: saved.user_id,
-    text: saved.text,
-    time: saved.created_at
-      ? new Date(saved.created_at).toLocaleTimeString("cs-CZ")
-      : "",
-    color: getColorForUser(saved.user),
-    room: roomId
-  };
+    const saved = data?.[0];
 
-  io.to(roomId).emit("receiveMessage", clientMsg);
-});
+    const clientMsg = {
+      id: saved.id,
+      user: saved.user,
+      userId: saved.userid,                 // ✅ správný sloupec
+      text: saved.text,
+      time: saved.time || "",              // ✅ používáme time
+      color: saved.color || getColorForUser(saved.user),
+      room: roomId
+    };
 
+    io.to(roomId).emit("receiveMessage", clientMsg);
+  });
 
   /* ------------------------------
      DELETE MESSAGE
