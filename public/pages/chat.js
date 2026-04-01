@@ -2,7 +2,7 @@ import { supabase } from "/supabase.js";
 
 // 1) username a roomId jako první
 const username = localStorage.getItem("username");
-let roomId = localStorage.getItem("roomId") || "hlavni-chat";
+let roomId = localStorage.getItem("roomId") || "hlavní-chat";
 
 if (!username || !roomId) {
   alert("Chybí jméno nebo místnost. Vraťte se na hlavní stránku.");
