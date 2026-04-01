@@ -13,8 +13,8 @@ if (!username || !roomId) {
 document.getElementById("roomTitle").textContent = "Místnost: " + roomId;
 
 document.getElementById("goToProfile").onclick = () => {
-    localStorage.removeItem("profileUser");
-    window.location.href = "/profile.html";
+  localStorage.removeItem("profileUser");
+  window.location.href = "/profile.html";
 };
 
 
@@ -100,10 +100,11 @@ document.addEventListener("click", (e) => {
     const id = e.target.dataset.id;
     socket.emit("deleteMessage", id);
   }
-  if (e.target.classList.contains("clickable-user")) {
-      const userId = e.target.dataset.userid;
-      localStorage.setItem("profileUser", userId);
-      window.location.href = "profile.html";
+  const userEl = e.target.closest(".clickable-user");
+  if (userEl) {
+    const userId = userEl.dataset.user;
+    localStorage.setItem("profileUser", userId);
+    window.location.href = "profile.html";
   }
 });
 
