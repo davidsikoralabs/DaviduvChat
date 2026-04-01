@@ -1,8 +1,7 @@
 import { supabase } from "/supabase.js";
 
-const { data: { user } } = await supabase.auth.getUser();
+// 1) username a roomId jako první
 const username = localStorage.getItem("username");
-
 let roomId = localStorage.getItem("roomId") || "hlavni-chat";
 
 if (!username || !roomId) {
@@ -10,17 +9,26 @@ if (!username || !roomId) {
   window.location.href = "/";
 }
 
+// 2) UI
 document.getElementById("roomTitle").textContent = "Místnost: " + roomId;
 
-document.getElementById("goToProfile").onclick = () => {
-  localStorage.removeItem("profileUser");
-  window.location.href = "/profile.html";
-};
+// 3) getUser
+const { data: { user } } = await supabase.auth.getUser();
+console.log("AUTH USER:", user);
 
-
+// 4) socket
 const socket = io("https://daviduvchat.onrender.com");
 
-socket.emit("joinRoom", { username, userId: user.id, roomId });
+// 5) joinRoom
+socket.on("connect", () => {
+    console.log("SOCKET CONNECTED");
+
+    socket.emit("joinRoom", {
+        username,       // 🔥 teď už existuje
+        userId: user.id,
+        roomId
+    });
+});
 
 
 // HISTORIE
@@ -35,7 +43,6 @@ socket.on("receiveMessage", (msg) => {
   addMessage(msg);
 });
 
-
 // ONLINE COUNT
 socket.on("roomUserCount", ({ roomId: id, count }) => {
   if (id === roomId) {
@@ -43,13 +50,13 @@ socket.on("roomUserCount", ({ roomId: id, count }) => {
   }
 });
 
+// SMAZÁNÍ ZPRÁVY
 socket.on("messageDeleted", (id) => {
   const el = document.querySelector(`[data-id="${id}"]`)?.closest(".msg");
   if (el) el.remove();
 });
 
-
-// ODESLÁNÍ
+// ODESLÁNÍ ZPRÁVY
 document.getElementById("sendButton").onclick = sendMessage;
 document.getElementById("message").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
@@ -64,21 +71,22 @@ function sendMessage() {
   input.value = "";
 }
 
+// VYKRESLENÍ ZPRÁVY
 function addMessage(msg) {
   const chat = document.getElementById("chat");
 
   const div = document.createElement("div");
   div.className = "msg";
-  div.dataset.id = msg.id; // důležité pro mazání
+  div.dataset.id = msg.id;
 
   let html = `
     <span class="user clickable-user" data-user="${msg.userId}" style="color:${msg.color}">
-  ${msg.user}</span>
+      ${msg.user}
+    </span>
     <span class="text" style="color:${msg.color}">${msg.text}</span>
     <span class="time">(${msg.time})</span>
   `;
 
-  // 🔥 Tady přidáme tlačítko Smazat
   if (msg.user === username) {
     html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
   }
@@ -89,12 +97,14 @@ function addMessage(msg) {
   chat.scrollTop = chat.scrollHeight;
 }
 
+// PŘEPÍNÁNÍ MÍSTNOSTÍ
 function switchRoom(newRoomId) {
   if (newRoomId === roomId) return;
   localStorage.setItem("roomId", newRoomId);
   window.location.reload();
 }
 
+// KLIK NA UŽIVATELE
 document.getElementById("chat").addEventListener("click", (e) => {
     const userEl = e.target.closest(".clickable-user");
     if (userEl) {
@@ -104,7 +114,7 @@ document.getElementById("chat").addEventListener("click", (e) => {
     }
 });
 
-
+// ZPĚT NA MÍSTNOSTI
 document.getElementById("backToRooms").onclick = () => {
   window.location.href = "/rooms.html";
 };
