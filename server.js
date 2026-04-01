@@ -53,6 +53,7 @@ async function loadRoomsFromDB() {
 }
 
 loadRoomsFromDB();
+console.log("ROOMS LOADED:", rooms);
 
 app.use(express.static("public"));
 
