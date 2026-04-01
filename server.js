@@ -69,6 +69,50 @@ app.get("/api/rooms", (req, res) => {
 });
 
 /* ============================================================
+   CREATE ROOM
+============================================================ */
+app.post("/api/rooms", async (req, res) => {
+  const { id, name } = req.body;
+
+  if (!id || !name) {
+    return res.status(400).json({ error: "Missing id or name" });
+  }
+
+  const { data, error } = await supabase
+    .from("rooms")
+    .insert({ id, name })
+    .select();
+
+  if (error) {
+    console.error("Chyba při vytváření místnosti:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  rooms.push({ id, name });
+  res.json({ success: true, room: data[0] });
+});
+
+/* ============================================================
+   DELETE ROOM
+============================================================ */
+app.delete("/api/rooms/:id", async (req, res) => {
+  const roomId = req.params.id;
+
+  const { error } = await supabase
+    .from("rooms")
+    .delete()
+    .eq("id", roomId);
+
+  if (error) {
+    console.error("Chyba při mazání místnosti:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  rooms = rooms.filter((r) => r.id !== roomId);
+  res.json({ success: true });
+});
+
+/* ============================================================
    SOCKET.IO
 ============================================================ */
 io.on("connection", (socket) => {
@@ -145,12 +189,10 @@ io.on("connection", (socket) => {
 
     const dbMsg = {
       user: username,
-      userid: userId,     // ✅ přesně jako v DB
+      userid: userId,     
       text: text,
       room: roomId,
-      time: now           // ✅ zapisujeme time (máš ho v tabulce)
-      // color necháme null, nebo můžeš přidat:
-      // color: getColorForUser(username)
+      time: now      
     };
 
     console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
@@ -170,9 +212,9 @@ io.on("connection", (socket) => {
     const clientMsg = {
       id: saved.id,
       user: saved.user,
-      userId: saved.userid,                 // ✅ správný sloupec
+      userId: saved.userid,                 
       text: saved.text,
-      time: saved.time || "",              // ✅ používáme time
+      time: saved.time || "",              
       color: saved.color || getColorForUser(saved.user),
       room: roomId
     };
@@ -189,7 +231,7 @@ io.on("connection", (socket) => {
     const { data, error } = await supabase
       .from("messages")
       .select("user")
-      .eq("id", id)
+      .eq("id", Number(id))
       .single();
 
     if (error) {
