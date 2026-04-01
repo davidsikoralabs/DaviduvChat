@@ -146,7 +146,7 @@ io.on("connection", (socket) => {
 
   const dbMsg = {
     user: username,
-    user_id: userId,
+    userid: userId,
     text: text,
     room: roomId
   };
