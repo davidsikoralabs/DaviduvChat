@@ -7,6 +7,7 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -130,50 +131,54 @@ io.on("connection", (socket) => {
      SEND MESSAGE
   ------------------------------ */
   socket.on("sendMessage", async (text) => {
-    const username = socket.data.username || "Anonym";
-    const userId = socket.data.userId;
-    const roomId = socket.data.roomId;
+  console.log("📩 RAW SEND MESSAGE INPUT:", text);
+  console.log("📌 socket.data:", socket.data);
 
-    if (!roomId || !userId) {
-      console.error("Chybí roomId nebo userId při odesílání zprávy");
-      return;
-    }
+  const username = socket.data.username || "Anonym";
+  const userId = socket.data.userId;
+  const roomId = socket.data.roomId;
 
-    const dbMsg = {
-      user: username,
-      user_id: userId,
-      text: text,
-      room_id: roomId
-    };
+  if (!roomId || !userId) {
+    console.error("❌ Chybí roomId nebo userId při odesílání zprávy");
+    return;
+  }
 
-    console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
+  const dbMsg = {
+    user: username,
+    user_id: userId,
+    text: text,
+    room_id: roomId
+  };
 
-    const { data, error } = await supabase
-      .from("messages")
-      .insert(dbMsg)
-      .select();
+  console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
 
-    if (error) {
-      console.error("❌ SUPABASE INSERT ERROR:", error);
-      return;
-    }
+  const { data, error } = await supabase
+    .from("messages")
+    .insert(dbMsg)
+    .select();
 
-    const saved = data?.[0];
+  if (error) {
+    console.error("❌ SUPABASE INSERT ERROR:", error);
+    return;
+  }
 
-    const clientMsg = {
-      id: saved.id,
-      user: saved.user,
-      userId: saved.user_id,
-      text: saved.text,
-      time: saved.created_at
-        ? new Date(saved.created_at).toLocaleTimeString("cs-CZ")
-        : "",
-      color: getColorForUser(saved.user),
-      room: roomId
-    };
+  const saved = data?.[0];
 
-    io.to(roomId).emit("receiveMessage", clientMsg);
-  });
+  const clientMsg = {
+    id: saved.id,
+    user: saved.user,
+    userId: saved.user_id,
+    text: saved.text,
+    time: saved.created_at
+      ? new Date(saved.created_at).toLocaleTimeString("cs-CZ")
+      : "",
+    color: getColorForUser(saved.user),
+    room: roomId
+  };
+
+  io.to(roomId).emit("receiveMessage", clientMsg);
+});
+
 
   /* ------------------------------
      DELETE MESSAGE
