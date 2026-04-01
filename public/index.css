@@ -39,9 +39,9 @@ body {
 
 .change-photo {
     position: absolute;
-    top: 105px;          
+    top: 190px;          
     left: 50%;          
-    transform: translateX(-50%); 
+    transform: translateX(-40%); 
     background: none;
     border: none;
     color: #6711e8;
@@ -424,6 +424,15 @@ button:hover {
     height: 150px;
   }
 
+    .change-photo {
+    position: static;
+    transform: none;
+    display: block;
+    text-align: center;
+    transform: translateY(-80%);
+    margin-left: 150px;
+    }
+
   .page-wrapper {
     border-radius: 0;
     height: 100dvh;
@@ -451,7 +460,19 @@ button:hover {
   .room {
     font-size: 18px;
   }
+
+  
+  .change-photo {
+    position: static;
+    transform: none;
+    display: block;
+    text-align: center;
+    transform: translateY(-80%);
+    margin-left: 140px;
+    }
 }
+
+
 
 /* MALÉ MOBILY */
 @media (max-width: 400px) {
