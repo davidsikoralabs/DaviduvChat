@@ -94,7 +94,7 @@ io.on("connection", (socket) => {
     const { data: history, error } = await supabase
       .from("messages")
       .select("*")
-      .eq("room_id", roomId)
+      .eq("room", roomId)
       .order("id", { ascending: true });
 
     if (error) {
@@ -148,7 +148,7 @@ io.on("connection", (socket) => {
     user: username,
     user_id: userId,
     text: text,
-    room_id: roomId
+    room: roomId
   };
 
   console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
