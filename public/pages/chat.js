@@ -95,18 +95,15 @@ function switchRoom(newRoomId) {
   window.location.reload();
 }
 
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("delete-btn")) {
-    const id = e.target.dataset.id;
-    socket.emit("deleteMessage", id);
-  }
-  const userEl = e.target.closest(".clickable-user");
-  if (userEl) {
-    const userId = userEl.dataset.user;
-    localStorage.setItem("profileUser", userId);
-    window.location.href = "profile.html";
-  }
+document.getElementById("chat").addEventListener("click", (e) => {
+    const userEl = e.target.closest(".clickable-user");
+    if (userEl) {
+        const userId = userEl.dataset.user;
+        localStorage.setItem("profileUser", userId);
+        window.location.href = "profile.html";
+    }
 });
+
 
 document.getElementById("backToRooms").onclick = () => {
   window.location.href = "/rooms.html";
