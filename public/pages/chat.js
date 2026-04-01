@@ -17,7 +17,7 @@ const { data: { user } } = await supabase.auth.getUser();
 console.log("AUTH USER:", user);
 
 // 4) socket
-const socket = io("https://daviduvchat.onrender.com");
+const socket = io();
 
 // 5) joinRoom
 socket.on("connect", () => {
