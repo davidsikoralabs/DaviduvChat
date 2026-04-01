@@ -43,17 +43,16 @@ async function loadRoomsFromDB() {
     return;
   }
 
-  rooms = data;
+  rooms = data || [];
 
-  if (!rooms.find(r => r.id === "hlavni-chat")) {
+  if (!rooms.find((r) => r.id === "hlavni-chat")) {
     const mainRoom = { id: "hlavni-chat", name: "Hlavní chat" };
     rooms.push(mainRoom);
     await supabase.from("rooms").insert(mainRoom);
   }
-}
 
-loadRoomsFromDB();
-console.log("ROOMS LOADED:", rooms);
+  console.log("ROOMS LOADED:", rooms);
+}
 
 app.use(express.static("public"));
 
@@ -79,7 +78,7 @@ io.on("connection", (socket) => {
      JOIN ROOM
   ------------------------------ */
   socket.on("joinRoom", async ({ username, userId, roomId }) => {
-    console.log("JOIN:", username, userId);
+    console.log("JOIN:", username, userId, roomId);
     const room = rooms.find((r) => r.id === roomId);
     if (!room) {
       socket.emit("errorMessage", "Místnost neexistuje");
@@ -87,26 +86,33 @@ io.on("connection", (socket) => {
     }
 
     socket.data.username = username || "Anonym";
-    socket.data.userId = userId;      
+    socket.data.userId = userId;
     socket.data.roomId = roomId;
 
-    // 1) Historie
-    const { data: history } = await supabase
+    // 1) Historie z DB
+    const { data: history, error } = await supabase
       .from("messages")
       .select("*")
       .eq("room_id", roomId)
       .order("id", { ascending: true });
 
-    const cleaned = history.map((msg) => ({
-      id: msg.id,
-      user: msg.user,
-      userId: msg.user_id,      
-      text: msg.text,
-      time: msg.time,
-      color: msg.color
-    }));
+    if (error) {
+      console.error("Chyba při načítání historie:", error);
+      socket.emit("chatHistory", []);
+    } else {
+      const cleaned = (history || []).map((msg) => ({
+        id: msg.id,
+        user: msg.user,
+        userId: msg.user_id,
+        text: msg.text,
+        time: msg.created_at
+          ? new Date(msg.created_at).toLocaleTimeString("cs-CZ")
+          : "",
+        color: getColorForUser(msg.user)
+      }));
 
-    socket.emit("chatHistory", cleaned);
+      socket.emit("chatHistory", cleaned);
+    }
 
     // 2) Připojení do místnosti
     socket.join(roomId);
@@ -123,32 +129,51 @@ io.on("connection", (socket) => {
   /* ------------------------------
      SEND MESSAGE
   ------------------------------ */
-socket.on("sendMessage", async (text) => {
-  const username = socket.data.username || "Anonym";
-  const userId = socket.data.userId;
-  const roomId = socket.data.roomId;
+  socket.on("sendMessage", async (text) => {
+    const username = socket.data.username || "Anonym";
+    const userId = socket.data.userId;
+    const roomId = socket.data.roomId;
 
-  const msg = {
-    user: username,
-    user_id: userId,
-    text: text,
-    room_id: roomId
-  };
+    if (!roomId || !userId) {
+      console.error("Chybí roomId nebo userId při odesílání zprávy");
+      return;
+    }
 
-  const { data, error } = await supabase
-    .from("messages")
-    .insert(msg)
-    .select();
+    const dbMsg = {
+      user: username,
+      user_id: userId,
+      text: text,
+      room_id: roomId
+    };
 
-  if (error) {
-    console.error("❌ SUPABASE INSERT ERROR:", error);
-  } else {
-    console.log("✅ MESSAGE SAVED:", data);
-  }
+    console.log("📌 DEBUG MESSAGE INSERT:", dbMsg);
 
-  io.to(roomId).emit("receiveMessage", data?.[0] || msg);
-});
+    const { data, error } = await supabase
+      .from("messages")
+      .insert(dbMsg)
+      .select();
 
+    if (error) {
+      console.error("❌ SUPABASE INSERT ERROR:", error);
+      return;
+    }
+
+    const saved = data?.[0];
+
+    const clientMsg = {
+      id: saved.id,
+      user: saved.user,
+      userId: saved.user_id,
+      text: saved.text,
+      time: saved.created_at
+        ? new Date(saved.created_at).toLocaleTimeString("cs-CZ")
+        : "",
+      color: getColorForUser(saved.user),
+      room: roomId
+    };
+
+    io.to(roomId).emit("receiveMessage", clientMsg);
+  });
 
   /* ------------------------------
      DELETE MESSAGE
@@ -156,11 +181,16 @@ socket.on("sendMessage", async (text) => {
   socket.on("deleteMessage", async (id) => {
     const username = socket.data.username;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("messages")
       .select("user")
       .eq("id", id)
       .single();
+
+    if (error) {
+      console.error("Chyba při ověřování zprávy pro smazání:", error);
+      return;
+    }
 
     if (!data || data.user !== username) return;
 
@@ -209,14 +239,11 @@ function updateRoomUserCount(roomId) {
    START SERVERU
 ============================================================ */
 const PORT = process.env.PORT || 3000;
+
 async function startServer() {
   console.log("Načítám místnosti...");
   await loadRoomsFromDB();
-  console.log("ROOMS LOADED:", rooms);
-
-  const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => console.log("Server běží na portu", PORT));
 }
 
 startServer();
-
