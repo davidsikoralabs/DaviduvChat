@@ -240,7 +240,13 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // 2) Informujeme klienty
+    // 2) Smazání zprávy
+    await supabase
+      .from("messages")
+      .delete()
+      .eq("id", Number(id));
+
+    // 3) Informujeme klienty
     io.to(socket.data.roomId).emit("messageDeleted", id);
   });
 
