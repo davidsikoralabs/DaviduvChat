@@ -131,3 +131,8 @@ document.getElementById("chat").addEventListener("click", (e) => {
 document.getElementById("backToRooms").onclick = () => {
   window.location.href = "/rooms.html";
 };
+
+document.getElementById("goToProfile").onclick = () => {
+    localStorage.removeItem("profileUser"); 
+    window.location.href = "/profile.html";
+};
