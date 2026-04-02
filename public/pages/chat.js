@@ -14,17 +14,15 @@ document.getElementById("roomTitle").textContent = "Místnost: " + roomId;
 
 // 3) getUser
 const { data: { user } } = await supabase.auth.getUser();
-console.log("AUTH USER:", user);
 
 // 4) socket
 const socket = io();
 
 // 5) joinRoom
 socket.on("connect", () => {
-  console.log("SOCKET CONNECTED");
 
   socket.emit("joinRoom", {
-    username,       // 🔥 teď už existuje
+    username,       
     userId: user.id,
     roomId
   });
@@ -67,12 +65,7 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  console.log("📤 ODESÍLÁM ZPRÁVU:", text);
-  console.log("📡 socket.connected =", socket.connected);
-
   socket.emit("sendMessage", text);
-
-  console.log("📨 EVENT ODESLÁN");
 
   input.value = "";
 }
