@@ -46,6 +46,26 @@ body {
     pointer-events: none; 
 }
 
+.login-logo{
+    position: relative;
+    transform: translate(200%, -230%);
+    border-radius: 20px;
+    top: 12px;      
+    left: 12px;     
+    height: 60px;  
+    pointer-events: none;  
+}
+
+.rooms-logo{
+    position: relative;
+    transform: translate(250%, -10%);
+    border-radius: 20px;
+    top: 12px;      
+    left: 12px;     
+    height: 100px;  
+    pointer-events: none;  
+}
+
 .change-photo {
     position: absolute;
     top: 190px;          
