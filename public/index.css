@@ -36,6 +36,15 @@ body {
     box-shadow: 0 0 0 3px #6711e8;
 }
 
+.profile-logo {
+    position: relative;
+    transform: translateY(-250%);
+    border-radius: 20px;
+    top: 12px;      
+    left: 12px;     
+    height: 60px;  
+    pointer-events: none; 
+}
 
 .change-photo {
     position: absolute;
