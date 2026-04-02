@@ -21,13 +21,13 @@ const socket = io();
 
 // 5) joinRoom
 socket.on("connect", () => {
-    console.log("SOCKET CONNECTED");
+  console.log("SOCKET CONNECTED");
 
-    socket.emit("joinRoom", {
-        username,       // 🔥 teď už existuje
-        userId: user.id,
-        roomId
-    });
+  socket.emit("joinRoom", {
+    username,       // 🔥 teď už existuje
+    userId: user.id,
+    roomId
+  });
 });
 
 
@@ -87,12 +87,13 @@ function addMessage(msg) {
   div.dataset.id = msg.id;
 
   let html = `
-    <span class="user clickable-user" data-user="${msg.userid}" style="color:${msg.color}">
-      ${msg.user}
-    </span>
-    <span class="text" style="color:${msg.color}">${msg.text}</span>
-    <span class="time">(${msg.time})</span>
+  <span class="user clickable-user" data-user="${msg.userid || msg.userId}" style="color:${msg.color}">
+  ${msg.user}
+  </span>
+  <span class="text" style="color:${msg.color}">${msg.text}</span>
+  <span class="time">(${msg.time})</span>
   `;
+
 
   if (msg.user === username) {
     html += `<button class="delete-btn" data-id="${msg.id}">×</button>`;
@@ -113,18 +114,18 @@ function switchRoom(newRoomId) {
 
 // KLIK NA UŽIVATELE
 document.getElementById("chat").addEventListener("click", (e) => {
-    if (e.target.classList.contains("delete-btn")) {
-        const id = e.target.dataset.id;
-        socket.emit("deleteMessage", id);
-        return;
-    }
+  if (e.target.classList.contains("delete-btn")) {
+    const id = e.target.dataset.id;
+    socket.emit("deleteMessage", id);
+    return;
+  }
 
-    const userEl = e.target.closest(".clickable-user");
-    if (userEl) {
-        const userId = userEl.dataset.user;
-        localStorage.setItem("profileUser", userId);
-        window.location.href = "profile.html";
-    }
+  const userEl = e.target.closest(".clickable-user");
+  if (userEl) {
+    const userId = userEl.dataset.user;
+    localStorage.setItem("profileUser", userId);
+    window.location.href = "profile.html";
+  }
 });
 
 // ZPĚT NA MÍSTNOSTI
@@ -133,6 +134,6 @@ document.getElementById("backToRooms").onclick = () => {
 };
 
 document.getElementById("goToProfile").onclick = () => {
-    localStorage.removeItem("profileUser"); 
-    window.location.href = "/profile.html";
+  localStorage.removeItem("profileUser");
+  window.location.href = "/profile.html";
 };
