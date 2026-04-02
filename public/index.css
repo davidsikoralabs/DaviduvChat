@@ -38,7 +38,7 @@ body {
 
 .profile-logo {
     position: relative;
-    transform: translateY(-250%);
+    transform: translate(80%, -250%);
     border-radius: 20px;
     top: 12px;      
     left: 12px;     
@@ -430,3 +430,77 @@ button:hover {
     border-radius: 8px;
     cursor: pointer;
 }
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 20px;
+}
+
+.gallery-grid img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+}
+
+.lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.upload-btn {
+    display: inline-block;
+    background-color: #6a4df4; 
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    transition: 0.2s;
+}
+
+.upload-btn:hover {
+    background-color: #5a3fe0;
+}
+
+.gallery-item {
+    position: relative;
+}
+
+.delete-photo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+

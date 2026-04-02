@@ -32,12 +32,13 @@ async function loadMyProfile() {
 
     document.getElementById("editProfileBtn").style.display = "flex";
     document.getElementById("changeAvatarBtn").style.display = "flex";
+
+    loadGallery(user.id);
 }
 
 /* ---------------------------------------------------
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
-// 1) Najdeme profil podle ID
 async function loadOtherUser(userId) {
     const { data: profile, error } = await supabase
         .from("profiles")
@@ -57,10 +58,12 @@ async function loadOtherUser(userId) {
         bio: profile.bio,
         avatar_url: profile.avatar_url
     });
+
+    document.getElementById("editProfileBtn").style.display = "none";
+    document.getElementById("changeAvatarBtn").style.display = "none";
+
+    loadGallery(userId);
 }
-// 3) Skryj tlačítka
-document.getElementById("editProfileBtn").style.display = "none";
-document.getElementById("changeAvatarBtn").style.display = "none";
 
 /* ---------------------------------------------------
    3) FUNKCE – RENDER PROFILU
@@ -169,7 +172,106 @@ document.getElementById("saveProfileBtn").onclick = async () => {
 };
 
 /* ---------------------------------------------------
-   6) SPUŠTĚNÍ PROFILU
+   6) UPLOAD FOTKY DO GALERIE
+--------------------------------------------------- */
+document.getElementById('uploadPhoto').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const fileName = Date.now() + "_" + file.name;
+
+    const { error } = await supabase.storage
+        .from('user_photos')
+        .upload(`${user.id}/${fileName}`, file);
+
+    if (error) {
+        console.error(error);
+        alert("Nepodařilo se nahrát fotku.");
+        return;
+    }
+
+    loadGallery(user.id);
+};
+
+/* ---------------------------------------------------
+   7) NAČÍTÁNÍ GALERIE
+--------------------------------------------------- */
+async function loadGallery(targetUserId) {
+    const { data, error } = await supabase.storage
+        .from('user_photos')
+        .list(`${targetUserId}/`, { limit: 100 });
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = "";
+
+    // Zjistíme, jestli se díváme na svůj profil
+    const { data: { user } } = await supabase.auth.getUser();
+    const isMyProfile = user && user.id === targetUserId;
+
+    data.forEach(file => {
+        const url = supabase.storage
+            .from('user_photos')
+            .getPublicUrl(`${targetUserId}/${file.name}`).data.publicUrl;
+
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('gallery-item');
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.onclick = () => openPhoto(url);
+
+        wrapper.appendChild(img);
+
+        // Přidáme tlačítko mazání jen na vlastním profilu
+        if (isMyProfile) {
+            const del = document.createElement('button');
+            del.classList.add('delete-photo');
+            del.textContent = "×";
+
+            del.onclick = async (e) => {
+                e.stopPropagation(); // aby se neotevřel lightbox
+
+                const { error: deleteError } = await supabase.storage
+                    .from('user_photos')
+                    .remove([`${targetUserId}/${file.name}`]);
+
+                if (deleteError) {
+                    console.error(deleteError);
+                    alert("Nepodařilo se smazat fotku.");
+                    return;
+                }
+
+                loadGallery(targetUserId);
+            };
+
+            wrapper.appendChild(del);
+        }
+
+        gallery.appendChild(wrapper);
+    });
+}
+
+
+/* ---------------------------------------------------
+   8) LIGHTBOX
+--------------------------------------------------- */
+function openPhoto(url) {
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('lightbox').classList.remove('hidden');
+}
+
+document.getElementById('lightbox').onclick = () => {
+    document.getElementById('lightbox').classList.add('hidden');
+};
+
+/* ---------------------------------------------------
+   9) SPUŠTĚNÍ PROFILU
 --------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
     const viewedUser = localStorage.getItem("profileUser");

@@ -17,7 +17,7 @@
         <div class="profile-card">
 
             <img id="avatar" class="avatar" src="">
-        
+
             <button id="changeAvatarBtn" class="change-photo">Změnit fotku</button>
             <input type="file" id="avatarInput" accept="image/*" style="display:none">
 
@@ -67,8 +67,19 @@
                 </div>
             </div>
         </div>
+        <h3>Galerie</h3>
+
+        <label for="uploadPhoto" class="upload-btn">Nahrát fotku</label>
+        <input type="file" id="uploadPhoto" accept="image/*" style="display:none">
+
+        <div id="gallery" class="gallery-grid"></div>
+        <div id="lightbox" class="lightbox hidden">
+            <img id="lightbox-img">
+        </div>
+
 
     </div>
+
 
     <!-- 🔥 JEDINÝ skript -->
     <script type="module" src="/pages/profile.js"></script>
