@@ -87,7 +87,7 @@ function addMessage(msg) {
   div.dataset.id = msg.id;
 
   let html = `
-    <span class="user clickable-user" data-user="${msg.userId}" style="color:${msg.color}">
+    <span class="user clickable-user" data-user="${msg.userid}" style="color:${msg.color}">
       ${msg.user}
     </span>
     <span class="text" style="color:${msg.color}">${msg.text}</span>

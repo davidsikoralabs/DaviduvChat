@@ -9,6 +9,11 @@ console.log("PROFILE JS LOADED");
 /* ---------------------------------------------------
    1) FUNKCE – MŮJ PROFIL
 --------------------------------------------------- */
+document.getElementById("goToProfile").onclick = () => {
+    localStorage.removeItem("profileUser"); // aby se načetl MŮJ profil
+    window.location.href = "/profile.html";
+};
+
 async function loadMyProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
