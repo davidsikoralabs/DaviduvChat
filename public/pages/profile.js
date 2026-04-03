@@ -10,6 +10,9 @@ console.log("PROFILE JS LOADED");
    1) FUNKCE – MŮJ PROFIL
 --------------------------------------------------- */
 async function loadMyProfile() {
+   
+    localStorage.removeItem("profileUser");
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         goTo("/login.html");
@@ -30,8 +33,12 @@ async function loadMyProfile() {
         avatar_url: profile.avatar_url
     });
 
+    document.getElementById("backBtn").style.display = "none";
     document.getElementById("editProfileBtn").style.display = "flex";
     document.getElementById("changeAvatarBtn").style.display = "flex";
+    document.getElementById("chatBtn").style.display = "flex";
+    document.getElementById("logoutBtn").style.display = "flex";
+    document.querySelector(".upload-btn").style.display = "inline-block";
 
     loadGallery(user.id);
 }
@@ -59,8 +66,15 @@ async function loadOtherUser(userId) {
         avatar_url: profile.avatar_url
     });
 
+    document.getElementById("backBtn").style.display = "inline-block";
+    document.getElementById("backBtn").onclick = () => {
+    history.back();
+    };
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("changeAvatarBtn").style.display = "none";
+    document.getElementById("chatBtn").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "none";
+    document.querySelector(".upload-btn").style.display = "none";
 
     loadGallery(userId);
 }
@@ -273,12 +287,15 @@ document.getElementById('lightbox').onclick = () => {
 /* ---------------------------------------------------
    9) SPUŠTĚNÍ PROFILU
 --------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const viewedUser = localStorage.getItem("profileUser");
 
-    if (viewedUser) {
-        loadOtherUser(viewedUser);
-    } else {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!viewedUser || viewedUser === user.id) {
         loadMyProfile();
+    } else {
+        loadOtherUser(viewedUser);
     }
 });
+

@@ -255,6 +255,16 @@ button:hover {
   }
 }
 
+/* =========================================
+   MALÉ MOBILY (max-width: 500px)
+   ========================================= */
+@media (max-width: 500px) {
+  .change-photo {
+    position: relative;
+    right: 150px;
+    transform: none;
+  }
+}
 
 
 /* =========================================
@@ -273,6 +283,12 @@ button:hover {
     top: 12px;
     left: 12px;
     height: 60px;
+  }
+
+  .change-photo {
+    position: relative;
+    right: 220px;
+    transform: none;
   }
   
     .rooms-logo{

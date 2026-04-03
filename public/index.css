@@ -70,12 +70,29 @@ body {
     position: absolute;
     top: 190px;          
     left: 50%;          
-    transform: translateX(-40%); 
+    transform: translateX(-90%); 
     background: none;
     border: none;
     color: #6711e8;
     font-size: 14px;
     cursor: pointer;
+}
+
+.back-btn {
+    background-color: #ff4d4d;
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 15px;
+    display: none; 
+}
+
+.back-btn:hover {
+    background-color: #e63b3b;
 }
 
 
