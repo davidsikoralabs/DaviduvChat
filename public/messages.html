@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zprávy</title>
+
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+
+    <style>
+        body {
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .messages-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .dm-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .dm-item:hover {
+            background: #ececec;
+        }
+
+        .dm-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .dm-info {
+            flex: 1;
+        }
+
+        .dm-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .dm-last-message {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .dm-time {
+            font-size: 12px;
+            color: #777;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="messages-wrapper">
+        <h2>Soukromé zprávy</h2>
+
+        <div id="dmList"></div>
+    </div>
+
+    <script type="module" src="/pages/messages.js"></script>
+    <script type="module" src="/pages/global.js"></script>
+
+</body>
+</html>

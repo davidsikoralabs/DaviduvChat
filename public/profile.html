@@ -23,6 +23,11 @@
 
             <img class="profile-logo" src="/assets/logo.jpg" alt="Logo">
 
+            <div class="nav-item inbox-wrapper">
+                <a href="/messages.html" id="inboxIcon">📨</a>
+                <span id="inboxDot" class="inbox-dot"></span>
+            </div>
+
             <h2 id="usernameDisplay" class="username"></h2>
             <p id="bioDisplay" class="bio"></p>
 
@@ -44,6 +49,7 @@
 
             <div class="profile-buttons">
                 <button id="backBtn" class="back-btn">Zpět</button>
+                <button id="dmBtn" class="dm-btn">Napsat zprávu</button>
                 <button id="editProfileBtn">Upravit profil</button>
                 <button id="chatBtn" class="chat">Chat</button>
                 <button id="logoutBtn" class="logout">Odhlásit se</button>
@@ -81,9 +87,8 @@
 
     </div>
 
-
-    <!-- 🔥 JEDINÝ skript -->
     <script type="module" src="/pages/profile.js"></script>
+    <script type="module" src="/pages/global.js"></script>
 
 </body>
 

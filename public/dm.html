@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soukromá zpráva</title>
+
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/index.css">
+    <script type="module" src="/pages/global.js"></script>
+</head>
+
+<body>
+
+    <div class="dm-container">
+
+        <!-- Horní lišta -->
+        <div class="dm-header">
+            <button id="backToInbox" class="dm-back">←</button>
+            <img id="dmAvatar" class="dm-avatar">
+            <span id="dmUsername" class="dm-username"></span>
+            <button id="deleteChatBtn" class="dm-delete">🗑️</button>
+        </div>
+
+        <!-- Zprávy -->
+        <div id="dmMessages" class="dm-messages"></div>
+
+        <!-- Input -->
+        <div class="dm-input-area">
+            <input id="dmInput" type="text" placeholder="Napište zprávu...">
+            <button id="dmSendBtn">Odeslat</button>
+        </div>
+
+    </div>
+
+    <script type="module" src="/pages/dm.js"></script>
+
+</body>
+
+</html>

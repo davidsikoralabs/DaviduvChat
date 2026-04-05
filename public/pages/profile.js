@@ -33,12 +33,17 @@ async function loadMyProfile() {
         avatar_url: profile.avatar_url
     });
 
+    //Tlačítka//
     document.getElementById("backBtn").style.display = "none";
+    document.getElementById("dmBtn").style.display = "none";
     document.getElementById("editProfileBtn").style.display = "flex";
     document.getElementById("changeAvatarBtn").style.display = "flex";
     document.getElementById("chatBtn").style.display = "flex";
     document.getElementById("logoutBtn").style.display = "flex";
     document.querySelector(".upload-btn").style.display = "inline-block";
+    document.getElementById("inboxIcon").onclick = () => {
+    window.location.href = "/inbox.html";
+    };
 
     loadGallery(user.id);
 }
@@ -65,10 +70,16 @@ async function loadOtherUser(userId) {
         bio: profile.bio,
         avatar_url: profile.avatar_url
     });
-
+    
+    //Tlačítka//
     document.getElementById("backBtn").style.display = "inline-block";
     document.getElementById("backBtn").onclick = () => {
     history.back();
+    };
+    document.getElementById("dmBtn").style.display = "inline-block";
+    document.getElementById("dmBtn").onclick = () => {
+    localStorage.setItem("dmUser", userId);
+    window.location.href = "/dm.html";
     };
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("changeAvatarBtn").style.display = "none";
@@ -283,6 +294,40 @@ function openPhoto(url) {
 document.getElementById('lightbox').onclick = () => {
     document.getElementById('lightbox').classList.add('hidden');
 };
+
+async function setupInboxNotifications() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    supabase
+        .channel("dm_notifications_" + user.id)
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "private_messages",
+                filter: `receiver_id=eq.${user.id}`
+            },
+            () => {
+                showInboxDot();
+            }
+        )
+        .subscribe();
+}
+
+function showInboxDot() {
+    const dot = document.getElementById("inboxDot");
+    if (dot) dot.style.display = "block";
+}
+
+// skrytí tečky, pokud už byl inbox otevřen
+if (localStorage.getItem("inboxSeen") === "true") {
+    const dot = document.getElementById("inboxDot");
+    if (dot) dot.style.display = "none";
+}
+
+setupInboxNotifications();
 
 /* ---------------------------------------------------
    9) SPUŠTĚNÍ PROFILU
