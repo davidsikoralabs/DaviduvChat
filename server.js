@@ -286,3 +286,16 @@ function updateRoomUserCount(roomId) {
   const count = roomSet ? roomSet.size : 0;
   io.emit("roomUserCount", { roomId, count });
 }
+
+/* ============================================================
+   START SERVERU
+============================================================ */
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
+  console.log("Načítám místnosti...");
+  await loadRoomsFromDB();
+  server.listen(PORT, () => console.log("Server běží na portu", PORT));
+}
+
+startServer();
