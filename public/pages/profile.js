@@ -295,40 +295,6 @@ document.getElementById('lightbox').onclick = () => {
     document.getElementById('lightbox').classList.add('hidden');
 };
 
-async function setupInboxNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    supabase
-        .channel("dm_notifications_" + user.id)
-        .on(
-            "postgres_changes",
-            {
-                event: "INSERT",
-                schema: "public",
-                table: "private_messages",
-                filter: `receiver_id=eq.${user.id}`
-            },
-            () => {
-                showInboxDot();
-            }
-        )
-        .subscribe();
-}
-
-function showInboxDot() {
-    const dot = document.getElementById("inboxDot");
-    if (dot) dot.style.display = "block";
-}
-
-// skrytí tečky, pokud už byl inbox otevřen
-if (localStorage.getItem("inboxSeen") === "true") {
-    const dot = document.getElementById("inboxDot");
-    if (dot) dot.style.display = "none";
-}
-
-setupInboxNotifications();
-
 /* ---------------------------------------------------
    9) SPUŠTĚNÍ PROFILU
 --------------------------------------------------- */
