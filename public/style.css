@@ -236,7 +236,7 @@ button:hover {
     transform: none;
     display: block;
     text-align: center;
-    transform: translateY(80%);
+    transform: translateY(70%);
   }
 
   /* Ze style.css */
@@ -261,7 +261,7 @@ button:hover {
 @media (max-width: 500px) {
   .change-photo {
     position: relative;
-    right: 150px;
+    right: 80px;
     transform: none;
   }
 }
@@ -278,7 +278,7 @@ button:hover {
 
   .profile-logo {
     position: relative;
-    transform: translate(150%, -480%);
+    transform: translate(100%, -480%);
     border-radius: 20px;
     top: 12px;
     left: 12px;
@@ -287,7 +287,7 @@ button:hover {
 
   .change-photo {
     position: relative;
-    right: 220px;
+    right: 100px;
     transform: none;
   }
   

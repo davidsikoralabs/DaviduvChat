@@ -76,9 +76,9 @@ body {
 
 .change-photo {
     position: absolute;
-    top: 190px;          
+    top: 130px;          
     left: 50%;          
-    transform: translateX(-90%); 
+    transform: translate(-60%); 
     background: none;
     border: none;
     color: #6711e8;
@@ -633,23 +633,30 @@ button:hover {
     cursor: pointer;
 }
 
-.inbox-wrapper {
+.profile-card {
     position: relative;
-    display: inline-block;
-    margin-top: 10px; /* volitelné, pokud chceš posunout */
+}
+
+.inbox-wrapper {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    z-index: 10;
 }
 
 .inbox-dot {
+    position: absolute;
+    top: 4px;
+    right: -4px;
     width: 10px;
     height: 10px;
     background: red;
     border-radius: 50%;
-    position: absolute;
-    top: -2px;
-    right: -2px;
     display: none;
+    z-index: 20;
 }
-
 
 .dm-delete {
     background: none;
