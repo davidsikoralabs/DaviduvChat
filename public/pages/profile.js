@@ -10,7 +10,7 @@ console.log("PROFILE JS LOADED");
    1) FUNKCE – MŮJ PROFIL
 --------------------------------------------------- */
 async function loadMyProfile() {
-   
+
     localStorage.removeItem("profileUser");
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -42,7 +42,7 @@ async function loadMyProfile() {
     document.getElementById("logoutBtn").style.display = "flex";
     document.querySelector(".upload-btn").style.display = "inline-block";
     document.getElementById("inboxIcon").onclick = () => {
-    window.location.href = "/inbox.html";
+        window.location.href = "/inbox.html";
     };
 
     loadGallery(user.id);
@@ -70,17 +70,47 @@ async function loadOtherUser(userId) {
         bio: profile.bio,
         avatar_url: profile.avatar_url
     });
-    
+
     //Tlačítka//
     document.getElementById("backBtn").style.display = "inline-block";
     document.getElementById("backBtn").onclick = () => {
-    history.back();
+        history.back();
     };
     document.getElementById("dmBtn").style.display = "inline-block";
-    document.getElementById("dmBtn").onclick = () => {
-    localStorage.setItem("dmUser", userId);
-    window.location.href = "/dm.html";
+    document.getElementById("dmBtn").onclick = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const myId = user.id;
+        const targetId = userId;
+
+        // 1) Najdeme existující chat
+        const { data: existingChat, error } = await supabase
+            .from("dms")
+            .select("*")
+            .or(
+                `and(user1_id.eq.${myId},user2_id.eq.${targetId}),and(user1_id.eq.${targetId},user2_id.eq.${myId})`
+            )
+            .maybeSingle();
+
+        if (existingChat) {
+            window.location.href = `/dm.html?chatId=${existingChat.id}`;
+            return;
+        }
+
+        // 2) Chat neexistuje → vytvoříme nový
+        const { data: newChat, error: insertError } = await supabase
+            .from("dms")
+            .insert([{ user1_id: myId, user2_id: targetId }])
+            .select()
+            .single();
+
+        if (insertError) {
+            alert("Chyba při vytváření chatu.");
+            return;
+        }
+
+        window.location.href = `/dm.html?chatId=${newChat.id}`;
     };
+
     document.getElementById("editProfileBtn").style.display = "none";
     document.getElementById("changeAvatarBtn").style.display = "none";
     document.getElementById("chatBtn").style.display = "none";
@@ -307,7 +337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Pokud není user param → zobrazím svůj profil
     if (!userIdFromUrl || userIdFromUrl === user.id) {
         loadMyProfile();
-    } 
+    }
     // Jinak zobrazím cizí profil
     else {
         loadOtherUser(userIdFromUrl);
