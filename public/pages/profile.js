@@ -299,14 +299,17 @@ document.getElementById('lightbox').onclick = () => {
    9) SPUŠTĚNÍ PROFILU
 --------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", async () => {
-    const viewedUser = localStorage.getItem("profileUser");
+    const params = new URLSearchParams(window.location.search);
+    const userIdFromUrl = params.get("user");
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!viewedUser || viewedUser === user.id) {
+    // Pokud není user param → zobrazím svůj profil
+    if (!userIdFromUrl || userIdFromUrl === user.id) {
         loadMyProfile();
-    } else {
-        loadOtherUser(viewedUser);
+    } 
+    // Jinak zobrazím cizí profil
+    else {
+        loadOtherUser(userIdFromUrl);
     }
 });
-

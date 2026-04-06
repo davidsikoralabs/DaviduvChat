@@ -120,4 +120,9 @@ async function init() {
     }
 }
 
+document.getElementById("backToProfile2").addEventListener("click", () => {
+    window.location.href = "/profile.html";
+});
+
+
 init();

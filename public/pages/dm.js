@@ -75,16 +75,27 @@ async function loadTargetUser(targetUserId) {
         return;
     }
 
+    // 1) ZOBRAZENÍ JMÉNA A AVATARU
     document.getElementById("dmUsername").textContent = data.username;
-    document.getElementById("dmAvatar").src = data.avatar_url || "/default-avatar.png";
+    document.getElementById("dmAvatar").src = data.avatar_url || "/assets/default-avatar.png";
 
+    // 2) KLIK NA PROFIL DRUHÉHO UŽIVATELE
+    document.getElementById("dmUsername").addEventListener("click", () => {
+        window.location.href = `/profile.html?user=${targetUserId}`;
+    });
+
+    document.getElementById("dmAvatar").addEventListener("click", () => {
+        window.location.href = `/profile.html?user=${targetUserId}`;
+    });
+
+    // 3) ZPĚT DO INBOXU
     document.getElementById("backToInbox").onclick = () => {
-        window.history.back();
+        window.location.href = "/messages.html";
     };
 
+    // 4) SKRYTÍ NOTIFIKACE
     localStorage.setItem("inboxSeen", "true");
 }
-
 
 // ============================================================
 // HLAVNÍ CHAT FUNKCE

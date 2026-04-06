@@ -7,9 +7,8 @@
   <title>Chatovací místnost</title>
 
   <link rel="stylesheet" href="/style.css">
-  <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/pages/chat.js"></script>
-  <script type="module" src="/pages/global.js"></script>
+  <link rel="stylesheet" href="/index.css">
+
 </head>
 
 <body>
@@ -42,6 +41,13 @@
 
   </div>
 
+  <div id="globalInboxWrapper">
+    <a href="/messages.html" id="inboxIcon">📨</a>
+    <span id="inboxDot"></span>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/pages/chat.js"></script>
+  <script type="module" src="/pages/global.js"></script>
 </body>
 
 </html>

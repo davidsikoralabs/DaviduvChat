@@ -103,7 +103,7 @@
             const res = await fetch("/api/rooms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, name }) 
+                body: JSON.stringify({ id, name })
             });
 
             const data = await res.json();
@@ -144,6 +144,13 @@
             }
         });
     </script>
+
+    <div id="globalInboxWrapper">
+        <a href="/messages.html" id="inboxIcon">📨</a>
+        <span id="inboxDot"></span>
+    </div>
+
+    <script type="module" src="/pages/global.js"></script>
 
 </body>
 
