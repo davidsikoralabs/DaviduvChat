@@ -142,6 +142,18 @@ async function setupChat(chatId, userId, targetUserId) {
         };
     }
 
+    // ENTER → odeslat zprávu
+    const input = document.getElementById("dmInput");
+    if (input) {
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage(chatId, userId, targetUserId);
+            }
+        });
+    }
+
+
     // 4) Mazání celé konverzace
     const deleteBtn = document.getElementById("deleteChatBtn");
     if (deleteBtn) {

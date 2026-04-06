@@ -2,11 +2,32 @@ console.log("LOGIN JS LOADED");
 
 import { supabase } from "/supabase.js";
 
-document.getElementById("loginBtn").onclick = async () => {
+const emailInput = document.getElementById("loginEmail");
+const passwordInput = document.getElementById("loginPassword");
+const loginBtn = document.getElementById("loginBtn");
+
+// ⭐ 1) ENTER v emailu → přesun do hesla
+emailInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        passwordInput.focus();
+    }
+});
+
+// ⭐ 2) ENTER v heslu → login
+passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        loginBtn.click(); // ← tohle spustí login
+    }
+});
+
+// ⭐ 3) Kliknutí na tlačítko → login
+loginBtn.onclick = async () => {
     console.log("CLICK WORKS");
 
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
 
     if (!email || !password) {
         alert("Vyplňte email i heslo.");
@@ -25,10 +46,8 @@ document.getElementById("loginBtn").onclick = async () => {
         return;
     }
 
-    // počkáme, až Supabase uloží session
     await new Promise(r => setTimeout(r, 200));
 
-    // 🔥 TADY JE OPRAVA
     localStorage.removeItem("profileUser");
     window.location.href = "/profile.html";
 };

@@ -22,7 +22,7 @@ const socket = io();
 socket.on("connect", () => {
 
   socket.emit("joinRoom", {
-    username,       
+    username,
     userId: user.id,
     roomId
   });
@@ -116,10 +116,10 @@ document.getElementById("chat").addEventListener("click", (e) => {
   const userEl = e.target.closest(".clickable-user");
   if (userEl) {
     const userId = userEl.dataset.user;
-    localStorage.setItem("profileUser", userId);
-    window.location.href = "profile.html";
+    window.location.href = `/profile.html?user=${userId}`;
   }
 });
+
 
 // ZPĚT NA MÍSTNOSTI
 document.getElementById("backToRooms").onclick = () => {
