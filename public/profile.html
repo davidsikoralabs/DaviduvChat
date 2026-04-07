@@ -35,14 +35,16 @@
 
             <div class="profile-stats">
                 <div class="stat">
-                    <span id="roomsCount">0</span>
+                    <span id="followersCount">0</span>
                     <label>Sledující</label>
                 </div>
                 <div class="stat">
-                    <span id="messagesCount">0</span>
+                    <span id="followingCount">0</span>
                     <label>Sledování</label>
                 </div>
             </div>
+
+            <button id="followBtn" class="follow-btn">Sledovat</button>
 
             <div class="profile-buttons">
                 <button id="backBtn" class="back-btn">Zpět</button>
@@ -71,6 +73,17 @@
                 </div>
             </div>
         </div>
+
+        <div id="followModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span id="modalTitle"></span>
+                    <button id="closeModal">✕</button>
+                </div>
+                <div id="modalList" class="modal-list"></div>
+            </div>
+        </div>
+
         <h3>Galerie</h3>
 
         <label for="uploadPhoto" class="upload-btn">Nahrát fotku</label>
@@ -89,6 +102,7 @@
 
     <div id="globalInboxWrapper">
         <a href="/messages.html" id="inboxIcon">📨</a>
+        <a href="/search.html" id="searchIcon">🔍</a>
         <span id="inboxDot"></span>
     </div>
 </body>

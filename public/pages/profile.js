@@ -6,11 +6,66 @@ function goTo(path) {
 
 console.log("PROFILE JS LOADED");
 
+async function openFollowModal(title, userId, type) {
+    document.getElementById("modalTitle").textContent = title;
+    const modal = document.getElementById("followModal");
+    const list = document.getElementById("modalList");
+
+    modal.style.display = "flex";
+    list.innerHTML = "Načítám...";
+
+    let query;
+
+    if (type === "followers") {
+        query = supabase
+            .from("follows")
+            .select("follower_id")
+            .eq("following_id", userId);
+    } else {
+        query = supabase
+            .from("follows")
+            .select("following_id")
+            .eq("follower_id", userId);
+    }
+
+    const { data } = await query;
+
+    list.innerHTML = "";
+
+    for (const row of data) {
+        const id = type === "followers" ? row.follower_id : row.following_id;
+
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .eq("id", id)
+            .single();
+
+        const item = document.createElement("div");
+        item.classList.add("item");
+
+        item.innerHTML = `
+            <img src="${profile.avatar_url || '/default-avatar.png'}">
+            <span>${profile.username}</span>
+        `;
+
+        item.onclick = () => {
+            window.location.href = `/profile.html?user=${profile.id}`;
+        };
+
+        list.appendChild(item);
+    }
+}
+
+document.getElementById("closeModal").onclick = () => {
+    document.getElementById("followModal").style.display = "none";
+};
+
+
 /* ---------------------------------------------------
    1) FUNKCE – MŮJ PROFIL
 --------------------------------------------------- */
 async function loadMyProfile() {
-
     localStorage.removeItem("profileUser");
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -18,6 +73,9 @@ async function loadMyProfile() {
         goTo("/login.html");
         return;
     }
+
+    const userId = user.id;
+
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -33,9 +91,32 @@ async function loadMyProfile() {
         avatar_url: profile.avatar_url
     });
 
+    const { count: followers } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", userId);
+
+    const { count: following } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", userId);
+
+    document.getElementById("followersCount").textContent = followers + " ";
+    document.getElementById("followingCount").textContent = following + " ";
+
+
+    document.getElementById("followersCount").onclick = () => {
+        openFollowModal("Sledující", userId, "followers");
+    };
+
+    document.getElementById("followingCount").onclick = () => {
+        openFollowModal("Sledování", userId, "following");
+    };
+
     //Tlačítka//
     document.getElementById("backBtn").style.display = "none";
     document.getElementById("dmBtn").style.display = "none";
+    document.getElementById("followBtn").style.display = "none";
     document.getElementById("editProfileBtn").style.display = "flex";
     document.getElementById("changeAvatarBtn").style.display = "flex";
     document.getElementById("chatBtn").style.display = "flex";
@@ -52,6 +133,7 @@ async function loadMyProfile() {
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
 async function loadOtherUser(userId) {
+    // 1) Načtení profilu
     const { data: profile, error } = await supabase
         .from("profiles")
         .select("username, bio, avatar_url, email, created_at")
@@ -71,19 +153,98 @@ async function loadOtherUser(userId) {
         avatar_url: profile.avatar_url
     });
 
-    //Tlačítka//
+    // 2) Základní UI nastavení
     document.getElementById("backBtn").style.display = "inline-block";
-    document.getElementById("backBtn").onclick = () => {
-        history.back();
-    };
+    document.getElementById("backBtn").onclick = () => history.back();
+
     document.getElementById("dmBtn").style.display = "inline-block";
+    document.getElementById("editProfileBtn").style.display = "none";
+    document.getElementById("changeAvatarBtn").style.display = "none";
+    document.getElementById("chatBtn").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "none";
+    document.querySelector(".upload-btn").style.display = "none";
+
+
+
+    // 4) Načtení počtů sledujících/sledovaných
+    async function updateFollowCounts() {
+        const { count: followers } = await supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("following_id", userId);
+
+        const { count: following } = await supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("follower_id", userId);
+
+        document.getElementById("followersCount").textContent = followers + " ";
+        document.getElementById("followingCount").textContent = following + " ";
+    }
+
+
+    document.getElementById("followersCount").onclick = () => {
+        openFollowModal("Sledující", userId, "followers");
+    };
+
+    document.getElementById("followingCount").onclick = () => {
+        openFollowModal("Sledování", userId, "following");
+    };
+
+    await updateFollowCounts();
+
+    // 5) Follow / Unfollow logika
+    const { data: { user: me } } = await supabase.auth.getUser();
+    const followBtn = document.getElementById("followBtn");
+    followBtn.style.display = "inline-block";
+
+    async function refreshFollowButton() {
+        const { data: follow } = await supabase
+            .from("follows")
+            .select("*")
+            .eq("follower_id", me.id)
+            .eq("following_id", userId)
+            .maybeSingle();
+
+        if (follow) {
+            followBtn.textContent = "Sledujete";
+            followBtn.classList.add("following");
+        } else {
+            followBtn.textContent = "Sledovat";
+            followBtn.classList.remove("following");
+        }
+    }
+
+    await refreshFollowButton();
+
+    followBtn.onclick = async () => {
+        const { data: current } = await supabase
+            .from("follows")
+            .select("*")
+            .eq("follower_id", me.id)
+            .eq("following_id", userId)
+            .maybeSingle();
+
+        if (current) {
+            // UNFOLLOW
+            await supabase.from("follows").delete().eq("id", current.id);
+        } else {
+            // FOLLOW
+            await supabase
+                .from("follows")
+                .insert([{ follower_id: me.id, following_id: userId }]);
+        }
+
+        await refreshFollowButton();
+        await updateFollowCounts();
+    };
+
+    // 6) DM tlačítko
     document.getElementById("dmBtn").onclick = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const myId = user.id;
+        const myId = me.id;
         const targetId = userId;
 
-        // 1) Najdeme existující chat
-        const { data: existingChat, error } = await supabase
+        const { data: existingChat } = await supabase
             .from("dms")
             .select("*")
             .or(
@@ -96,7 +257,6 @@ async function loadOtherUser(userId) {
             return;
         }
 
-        // 2) Chat neexistuje → vytvoříme nový
         const { data: newChat, error: insertError } = await supabase
             .from("dms")
             .insert([{ user1_id: myId, user2_id: targetId }])
@@ -111,12 +271,7 @@ async function loadOtherUser(userId) {
         window.location.href = `/dm.html?chatId=${newChat.id}`;
     };
 
-    document.getElementById("editProfileBtn").style.display = "none";
-    document.getElementById("changeAvatarBtn").style.display = "none";
-    document.getElementById("chatBtn").style.display = "none";
-    document.getElementById("logoutBtn").style.display = "none";
-    document.querySelector(".upload-btn").style.display = "none";
-
+    // 7) Galerie
     loadGallery(userId);
 }
 

@@ -120,7 +120,6 @@ body {
     background-color: #e63b3b;
 }
 
-
 /* Username */
 .username {
     color: #201f21;
@@ -144,7 +143,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* Stats */
 .profile-stats {
     display: flex;
     justify-content: center;
@@ -185,6 +183,12 @@ body {
 .logout {
     background: #eee;
     color: #333;
+}
+
+.follow-btn {
+    background: #4c3def;
+    font-size: 10px;
+    transform: translate(150%);
 }
 
 .page-wrapper {
@@ -661,7 +665,13 @@ button:hover {
     z-index: 9999;
 }
 
+#searchIcon {
+    display: flex;
+    font-size: 24px;
+}
+
 #inboxIcon {
+    display: flex;
     font-size: 26px;
     cursor: pointer;
 }
@@ -684,4 +694,50 @@ button:hover {
     cursor: pointer;
     margin-left: auto;
     color: #d33;
+}
+
+#followModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+#followModal .modal-content {
+    background: #856acb;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80%;
+    border-radius: 12px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+#followModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#followModal .modal-list .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+#followModal .modal-list img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
 }
