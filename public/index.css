@@ -185,10 +185,15 @@ body {
     color: #333;
 }
 
-.follow-btn {
-    background: #4c3def;
-    font-size: 10px;
-    transform: translate(150%);
+.follow-btn-wrapper {
+    font-size: 5px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#followBtn {
+    margin: 10px auto;
 }
 
 .page-wrapper {
@@ -702,7 +707,7 @@ button:hover {
     left: 0;
     width: 80%;
     height: 100%;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0, 0, 0, 0.55);
     display: none;
     justify-content: center;
     align-items: center;
@@ -781,12 +786,31 @@ button:hover {
     border-radius: 12px;
 }
 
+/* Post container */
 .post {
+    max-width: 600px;
+    margin: 2px auto;
     background: #fff;
+    border: 1px solid #ddd;
     border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    padding-bottom: 10px;
+    overflow: hidden;
+}
+
+/* Obrázek */
+.post-image {
+    display: block;
+    margin: 0 auto;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 0;
+}
+
+/* Header */
+.post-header {
+    display: flex;
+    align-items: center;
+    padding: 10px;
 }
 
 .post-header {
@@ -819,13 +843,6 @@ button:hover {
     color: #343030;
 }
 
-.post-image {
-    width: 100%;
-    border-radius: 12px;
-    margin: 10px 0;
-    object-fit: cover;
-}
-
 .post-caption {
     font-size: 14px;
     margin-top: 6px;
@@ -849,15 +866,70 @@ button:hover {
     color: red;
 }
 
+.like-count,
+.comment-count {
+    color: #4b0c0c;
+}
+
+/* Wrapper komentářů */
 .comments {
     padding: 10px 0;
 }
 
+.comments.hidden {
+    display: none;
+}
+
+/* Seznam komentářů */
 .comment-list {
     margin-bottom: 8px;
 }
 
+/* Jednotlivý komentář */
 .comment {
-    margin-bottom: 4px;
     font-size: 14px;
+    color: #111;
+    margin-bottom: 6px;
+    line-height: 1.4;
+    background: #f2f2f2;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+/* Username v komentáři */
+.comment strong {
+    font-weight: 600;
+    color: #430fff;
+}
+
+/* Tlačítko pro otevření komentářů */
+.comment-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* Input pro psaní komentáře */
+.comment-input {
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    width: 90%;
+}
+
+.delete-post-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #888;
+    padding: 4px;
+}
+
+.delete-post-btn:hover {
+    color: #d00;
 }
