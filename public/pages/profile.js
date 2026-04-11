@@ -61,6 +61,361 @@ document.getElementById("closeModal").onclick = () => {
     document.getElementById("followModal").style.display = "none";
 };
 
+async function loadUserFeed(userId) {
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "Načítám...";
+
+    const { data: photos, error: photosError } = await supabase
+        .from("photos")
+        .select("id, url, caption, created_at, user_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (photosError) {
+        console.error("Chyba při načítání fotek:", photosError);
+        feed.innerHTML = "<p>Nepodařilo se načíst příspěvky.</p>";
+        return;
+    }
+
+    if (!photos || photos.length === 0) {
+        feed.innerHTML = "<p>Zatím žádné příspěvky.</p>";
+        return;
+    }
+
+    const { data: author, error: authorError } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", userId)
+        .single();
+
+    if (authorError || !author) {
+        console.error("Chyba při načítání profilu autora:", authorError);
+        feed.innerHTML = "<p>Nepodařilo se načíst profil autora.</p>";
+        return;
+    }
+
+    feed.innerHTML = "";
+
+    for (const photo of photos) {
+        const post = document.createElement("div");
+        post.className = "post";
+
+        post.innerHTML = `
+            <div class="post-header">
+                <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
+                <div>
+                    <div class="post-username" data-user="${author.id}">
+                        ${author.username}
+                    </div>
+                    <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
+                </div>
+            </div>
+
+            <img class="post-image" src="${photo.url}">
+
+            ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
+
+            <div class="post-actions">
+                <button class="like-btn">❤️</button>
+                <span class="like-count">0</span>
+            </div>
+
+            <div class="comments">
+                <div class="comment-list"></div>
+                <input class="comment-input" placeholder="Napiš komentář...">
+            </div>
+        `;
+
+        // klik na jméno
+        post.querySelector(".post-username").onclick = () => {
+            window.location.href = `profile.html?user=${author.id}`;
+        };
+
+        // --- KOMENTÁŘE ---
+        const commentList = post.querySelector(".comment-list");
+        const commentInput = post.querySelector(".comment-input");
+
+        const { data: commentsData, error: commentsError } = await supabase
+            .from("comments")
+            .select("*") // bez joinu na profiles, ať to nepadá
+            .eq("photo_id", photo.id)
+            .order("created_at", { ascending: true });
+
+        if (commentsError) {
+            console.error("Chyba při načítání komentářů:", commentsError);
+        }
+
+        const comments = commentsData || [];
+
+        comments.forEach(c => {
+            const div = document.createElement("div");
+            div.className = "comment";
+            // zatím jen text, username můžeme dodělat později přes join nebo extra dotaz
+            div.textContent = c.text;
+            commentList.appendChild(div);
+        });
+
+        commentInput.onkeydown = async (e) => {
+            if (e.key === "Enter" && commentInput.value.trim() !== "") {
+                const text = commentInput.value.trim();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const { error: insertError } = await supabase
+                    .from("comments")
+                    .insert([{ user_id: user.id, photo_id: photo.id, text }]);
+
+                if (insertError) {
+                    console.error("Chyba při ukládání komentáře:", insertError);
+                    return;
+                }
+
+                const div = document.createElement("div");
+                div.className = "comment";
+                div.textContent = text;
+                commentList.appendChild(div);
+
+                commentInput.value = "";
+            }
+        };
+
+        // --- LAJKY ---
+        const likeBtn = post.querySelector(".like-btn");
+        const likeCount = post.querySelector(".like-count");
+
+        const { data: likesData, error: likesError } = await supabase
+            .from("likes")
+            .select("*")
+            .eq("photo_id", photo.id);
+
+        if (likesError) {
+            console.error("Chyba při načítání lajků:", likesError);
+        }
+
+        const likes = likesData || [];
+        likeCount.textContent = likes.length;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        let alreadyLiked = likes.some(l => l.user_id === user.id);
+
+        if (alreadyLiked) likeBtn.classList.add("liked");
+
+        likeBtn.onclick = async () => {
+            if (alreadyLiked) {
+                const { error: unlikeError } = await supabase
+                    .from("likes")
+                    .delete()
+                    .eq("user_id", user.id)
+                    .eq("photo_id", photo.id);
+
+                if (unlikeError) {
+                    console.error("Chyba při odstraňování lajku:", unlikeError);
+                    return;
+                }
+
+                alreadyLiked = false;
+                likeBtn.classList.remove("liked");
+                likeCount.textContent = Number(likeCount.textContent) - 1;
+            } else {
+                const { error: likeError } = await supabase
+                    .from("likes")
+                    .insert([{ user_id: user.id, photo_id: photo.id }]);
+
+                if (likeError) {
+                    console.error("Chyba při přidávání lajku:", likeError);
+                    return;
+                }
+
+                alreadyLiked = true;
+                likeBtn.classList.add("liked");
+                likeCount.textContent = Number(likeCount.textContent) + 1;
+            }
+        };
+
+        feed.appendChild(post);
+    }
+}
+
+async function loadFollowingFeed() {
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "Načítám...";
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const myId = user.id;
+
+    // 1) Zjistíme, koho sleduju
+    const { data: following } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", myId);
+
+    if (!following || following.length === 0) {
+        feed.innerHTML = "<p>Začni někoho sledovat!</p>";
+        return;
+    }
+
+    const followingIds = following.map(f => f.following_id);
+
+    // 2) Načteme fotky od sledovaných
+    const { data: photos } = await supabase
+        .from("photos")
+        .select("id, url, caption, created_at, user_id")
+        .in("user_id", followingIds)
+        .order("created_at", { ascending: false });
+
+    if (!photos || photos.length === 0) {
+        feed.innerHTML = "<p>Zatím žádné příspěvky.</p>";
+        return;
+    }
+
+    // 3) Načteme profily autorů
+    const userIds = [...new Set(photos.map(p => p.user_id))];
+
+    const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .in("id", userIds);
+
+    const profileMap = {};
+    profiles.forEach(p => profileMap[p.id] = p);
+
+    // 4) Render
+    feed.innerHTML = "";
+
+    for (const photo of photos) {
+        const author = profileMap[photo.user_id];
+
+        const post = document.createElement("div");
+        post.className = "post";
+
+        post.innerHTML = `
+            <div class="post-header">
+                <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
+                <div>
+                    <div class="post-username" data-user="${author.id}">
+                        ${author.username}
+                    </div>
+                    <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
+                </div>
+            </div>
+
+            <img class="post-image" src="${photo.url}">
+            ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
+
+            <div class="post-actions">
+                <button class="like-btn">❤️</button>
+                <span class="like-count">0</span>
+            </div>
+
+            <div class="comments">
+                <div class="comment-list"></div>
+                <input class="comment-input" placeholder="Napiš komentář...">
+            </div>
+        `;
+
+        // Klik na jméno
+        post.querySelector(".post-username").onclick = () => {
+            window.location.href = `profile.html?user=${author.id}`;
+        };
+
+        // --- KOMENTÁŘE ---
+        const commentList = post.querySelector(".comment-list");
+        const commentInput = post.querySelector(".comment-input");
+
+        // Načtení komentářů
+        const { data: commentsData } = await supabase
+            .from("comments")
+            .select("text, user_id")
+            .eq("photo_id", photo.id)
+            .order("created_at", { ascending: true });
+
+        const comments = commentsData || [];
+
+        // Render komentářů
+        for (const c of comments) {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("username")
+                .eq("id", c.user_id)
+                .single();
+
+            const div = document.createElement("div");
+            div.className = "comment";
+            div.textContent = `${profile?.username || "uživatel"}: ${c.text}`;
+            commentList.appendChild(div);
+        }
+
+        // Přidání komentáře
+        commentInput.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault(); // 🔥 ZABRÁNÍ SUBMITU FORMULÁŘE
+
+                const text = commentInput.value.trim();
+                if (!text) return;
+
+                const { data: { user } } = await supabase.auth.getUser();
+
+                await supabase
+                    .from("comments")
+                    .insert([{ user_id: user.id, photo_id: photo.id, text }]);
+
+                // Získáme username
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("username")
+                    .eq("id", user.id)
+                    .single();
+
+                // Přidáme do UI
+                const div = document.createElement("div");
+                div.className = "comment";
+                div.textContent = `${profile?.username || "já"}: ${text}`;
+                commentList.appendChild(div);
+
+                commentInput.value = "";
+            }
+        });
+
+        // --- LAJKY ---
+        const likeBtn = post.querySelector(".like-btn");
+        const likeCount = post.querySelector(".like-count");
+
+        const { data: likesData } = await supabase
+            .from("likes")
+            .select("*")
+            .eq("photo_id", photo.id);
+
+        const likes = likesData || [];
+        likeCount.textContent = likes.length;
+
+        let alreadyLiked = likes.some(l => l.user_id === myId);
+
+        if (alreadyLiked) likeBtn.classList.add("liked");
+
+        likeBtn.onclick = async () => {
+            if (alreadyLiked) {
+                await supabase
+                    .from("likes")
+                    .delete()
+                    .eq("user_id", myId)
+                    .eq("photo_id", photo.id);
+
+                alreadyLiked = false;
+                likeBtn.classList.remove("liked");
+                likeCount.textContent = Number(likeCount.textContent) - 1;
+            } else {
+                await supabase
+                    .from("likes")
+                    .insert([{ user_id: myId, photo_id: photo.id }]);
+
+                alreadyLiked = true;
+                likeBtn.classList.add("liked");
+                likeCount.textContent = Number(likeCount.textContent) + 1;
+            }
+        };
+
+        feed.appendChild(post);
+    }
+}
 
 /* ---------------------------------------------------
    1) FUNKCE – MŮJ PROFIL
@@ -75,7 +430,6 @@ async function loadMyProfile() {
     }
 
     const userId = user.id;
-
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -104,7 +458,6 @@ async function loadMyProfile() {
     document.getElementById("followersCount").textContent = followers + " ";
     document.getElementById("followingCount").textContent = following + " ";
 
-
     document.getElementById("followersCount").onclick = () => {
         openFollowModal("Sledující", userId, "followers");
     };
@@ -113,7 +466,7 @@ async function loadMyProfile() {
         openFollowModal("Sledování", userId, "following");
     };
 
-    //Tlačítka//
+    // Tlačítka
     document.getElementById("backBtn").style.display = "none";
     document.getElementById("dmBtn").style.display = "none";
     document.getElementById("followBtn").style.display = "none";
@@ -126,14 +479,14 @@ async function loadMyProfile() {
         window.location.href = "/inbox.html";
     };
 
-    loadGallery(user.id);
+    await loadFollowingFeed(user.id);
+    await loadGallery(user.id);
 }
 
 /* ---------------------------------------------------
    2) FUNKCE – CIZÍ PROFIL
 --------------------------------------------------- */
 async function loadOtherUser(userId) {
-    // 1) Načtení profilu
     const { data: profile, error } = await supabase
         .from("profiles")
         .select("username, bio, avatar_url, email, created_at")
@@ -153,7 +506,6 @@ async function loadOtherUser(userId) {
         avatar_url: profile.avatar_url
     });
 
-    // 2) Základní UI nastavení
     document.getElementById("backBtn").style.display = "inline-block";
     document.getElementById("backBtn").onclick = () => history.back();
 
@@ -164,9 +516,6 @@ async function loadOtherUser(userId) {
     document.getElementById("logoutBtn").style.display = "none";
     document.querySelector(".upload-btn").style.display = "none";
 
-
-
-    // 4) Načtení počtů sledujících/sledovaných
     async function updateFollowCounts() {
         const { count: followers } = await supabase
             .from("follows")
@@ -182,7 +531,6 @@ async function loadOtherUser(userId) {
         document.getElementById("followingCount").textContent = following + " ";
     }
 
-
     document.getElementById("followersCount").onclick = () => {
         openFollowModal("Sledující", userId, "followers");
     };
@@ -193,7 +541,6 @@ async function loadOtherUser(userId) {
 
     await updateFollowCounts();
 
-    // 5) Follow / Unfollow logika
     const { data: { user: me } } = await supabase.auth.getUser();
     const followBtn = document.getElementById("followBtn");
     followBtn.style.display = "inline-block";
@@ -226,10 +573,8 @@ async function loadOtherUser(userId) {
             .maybeSingle();
 
         if (current) {
-            // UNFOLLOW
             await supabase.from("follows").delete().eq("id", current.id);
         } else {
-            // FOLLOW
             await supabase
                 .from("follows")
                 .insert([{ follower_id: me.id, following_id: userId }]);
@@ -239,7 +584,6 @@ async function loadOtherUser(userId) {
         await updateFollowCounts();
     };
 
-    // 6) DM tlačítko
     document.getElementById("dmBtn").onclick = async () => {
         const myId = me.id;
         const targetId = userId;
@@ -271,8 +615,8 @@ async function loadOtherUser(userId) {
         window.location.href = `/dm.html?chatId=${newChat.id}`;
     };
 
-    // 7) Galerie
-    loadGallery(userId);
+    await loadUserFeed(userId);
+    await loadGallery(userId);
 }
 
 /* ---------------------------------------------------
@@ -389,11 +733,12 @@ document.getElementById('uploadPhoto').onchange = async (e) => {
     if (!file) return;
 
     const { data: { user } } = await supabase.auth.getUser();
+    const userId = user.id;
     const fileName = Date.now() + "_" + file.name;
 
     const { error } = await supabase.storage
         .from('user_photos')
-        .upload(`${user.id}/${fileName}`, file);
+        .upload(`${userId}/${fileName}`, file);
 
     if (error) {
         console.error(error);
@@ -401,7 +746,18 @@ document.getElementById('uploadPhoto').onchange = async (e) => {
         return;
     }
 
-    loadGallery(user.id);
+    const { data: urlData } = supabase
+        .storage
+        .from("user_photos")
+        .getPublicUrl(`${userId}/${fileName}`);
+
+    await supabase.from("photos").insert({
+        user_id: userId,
+        url: urlData.publicUrl,
+        caption: ""
+    });
+
+    loadGallery(userId);
 };
 
 /* ---------------------------------------------------
@@ -438,7 +794,6 @@ async function loadGallery(targetUserId) {
 
         wrapper.appendChild(img);
 
-        // Přidáme tlačítko mazání jen na vlastním profilu
         if (isMyProfile) {
             const del = document.createElement('button');
             del.classList.add('delete-photo');
@@ -467,7 +822,6 @@ async function loadGallery(targetUserId) {
     });
 }
 
-
 /* ---------------------------------------------------
    8) LIGHTBOX
 --------------------------------------------------- */
@@ -489,12 +843,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Pokud není user param → zobrazím svůj profil
-    if (!userIdFromUrl || userIdFromUrl === user.id) {
+    if (userIdFromUrl && userIdFromUrl !== (await supabase.auth.getUser()).data.user.id) {
+        loadOtherUser(userIdFromUrl);
+    } else {
         loadMyProfile();
     }
-    // Jinak zobrazím cizí profil
-    else {
-        loadOtherUser(userIdFromUrl);
-    }
+
 });
