@@ -1,783 +1,762 @@
 import { supabase } from "/supabase.js";
 
+/* ---------------------------------------------------
+   POMOCNÉ FUNKCE
+--------------------------------------------------- */
+
 function goTo(path) {
     window.location.href = path;
 }
 
-console.log("PROFILE JS LOADED");
-
-async function openFollowModal(title, userId, type) {
-    document.getElementById("modalTitle").textContent = title;
-    const modal = document.getElementById("followModal");
-    const list = document.getElementById("modalList");
-
-    modal.style.display = "flex";
-    list.innerHTML = "Načítám...";
-
-    let query;
-
-    if (type === "followers") {
-        query = supabase
-            .from("follows")
-            .select("follower_id")
-            .eq("following_id", userId);
-    } else {
-        query = supabase
-            .from("follows")
-            .select("following_id")
-            .eq("follower_id", userId);
-    }
-
-    const { data } = await query;
-
-    list.innerHTML = "";
-
-    for (const row of data) {
-        const id = type === "followers" ? row.follower_id : row.following_id;
-
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, username, avatar_url")
-            .eq("id", id)
-            .single();
-
-        const item = document.createElement("div");
-        item.classList.add("item");
-
-        item.innerHTML = `
-            <img src="${profile.avatar_url || '/default-avatar.png'}">
-            <span>${profile.username}</span>
-        `;
-
-        item.onclick = () => {
-            window.location.href = `/profile.html?user=${profile.id}`;
-        };
-
-        list.appendChild(item);
-    }
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
 }
 
-document.getElementById("closeModal").onclick = () => {
-    document.getElementById("followModal").style.display = "none";
-};
-
-async function loadUserFeed(userId) {
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "Načítám...";
-
-    const { data: { user } } = await supabase.auth.getUser();
-    const myId = user.id;
-
-    // Načteme fotky uživatele
-    const { data: photos, error: photosError } = await supabase
-        .from("photos")
-        .select("id, url, caption, created_at, user_id")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-    if (photosError) {
-        console.error("Chyba při načítání fotek:", photosError);
-        feed.innerHTML = "<p>Nepodařilo se načíst příspěvky.</p>";
-        return;
-    }
-
-    if (!photos || photos.length === 0) {
-        feed.innerHTML = "<p>Zatím žádné příspěvky.</p>";
-        return;
-    }
-
-    // Načteme profil autora
-    const { data: author, error: authorError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .eq("id", userId)
-        .single();
-
-    if (authorError || !author) {
-        console.error("Chyba při načítání profilu autora:", authorError);
-        feed.innerHTML = "<p>Nepodařilo se načíst profil autora.</p>";
-        return;
-    }
-
-    feed.innerHTML = "";
-
-    for (const photo of photos) {
-        const post = document.createElement("div");
-        post.className = "post";
-
-        post.innerHTML = `
-            <div class="post-header">
-                <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
-                <div>
-                    <div class="post-username" data-user="${author.id}">
-                        ${author.username}
-                    </div>
-                    <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
-                </div>
-            </div>
-
-            <img class="post-image" src="${photo.url}">
-            ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
-
-            <div class="post-actions">
-                <button class="like-btn">❤️</button>
-                <span class="like-count">0</span>
-                <button class="comment-toggle-btn">💬</button>
-                <span class="comment-count">0</span>
-            </div>
-
-            <div class="comments hidden">
-                <div class="comment-list"></div>
-                <input class="comment-input" placeholder="Napiš komentář...">
-            </div>
-
-            <div class="post-header">
-    <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
-    <div>
-        <div class="post-username" data-user="${author.id}">
-            ${author.username}
-        </div>
-        <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
-    </div>
-
-    ${author.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
-</div>
-
-        `;
-
-        // Klik na jméno autora
-        post.querySelector(".post-username").onclick = () => {
-            window.location.href = `profile.html?user=${author.id}`;
-        };
-
-        // --- KOMENTÁŘE ---
-        const commentList = post.querySelector(".comment-list");
-        const commentInput = post.querySelector(".comment-input");
-        const commentCount = post.querySelector(".comment-count");
-
-        // Načteme komentáře
-        const { data: commentsData } = await supabase
-            .from("comments")
-            .select("text, user_id")
-            .eq("photo_id", photo.id)
-            .order("created_at", { ascending: true });
-
-        const comments = commentsData || [];
-        commentCount.textContent = comments.length;
-
-        // Render komentářů s username + kliknutím
-        for (const c of comments) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("username")
-                .eq("id", c.user_id)
-                .single();
-
-            const div = document.createElement("div");
-            div.className = "comment";
-
-            div.innerHTML = `
-                <strong class="comment-username" data-user="${c.user_id}">
-                    ${profile?.username || "uživatel"}
-                </strong>
-                ${c.text}
-            `;
-
-            div.querySelector(".comment-username").onclick = () => {
-                window.location.href = `profile.html?user=${c.user_id}`;
-            };
-
-            commentList.appendChild(div);
-        }
-
-        // Přidání komentáře
-        commentInput.addEventListener("keydown", async (e) => {
-            if (e.key === "Enter" && commentInput.value.trim() !== "") {
-                e.preventDefault();
-
-                const text = commentInput.value.trim();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                // Uložíme komentář
-                const { error: insertError } = await supabase
-                    .from("comments")
-                    .insert([{ user_id: user.id, photo_id: photo.id, text }]);
-
-                if (insertError) {
-                    console.error("Chyba při ukládání komentáře:", insertError);
-                    return;
-                }
-
-                // Získáme username
-                const { data: profile } = await supabase
-                    .from("profiles")
-                    .select("username")
-                    .eq("id", user.id)
-                    .single();
-
-                // Přidáme do UI
-                const div = document.createElement("div");
-                div.className = "comment";
-
-                div.innerHTML = `
-                    <strong class="comment-username" data-user="${user.id}">
-                        ${profile?.username || "já"}
-                    </strong>
-                    ${text}
-                `;
-
-                div.querySelector(".comment-username").onclick = () => {
-                    window.location.href = `profile.html?user=${user.id}`;
-                };
-
-                commentList.appendChild(div);
-
-                commentInput.value = "";
-                commentCount.textContent = Number(commentCount.textContent) + 1;
-            }
-        });
-
-        const deleteBtn = post.querySelector(".delete-post-btn");
-
-        if (deleteBtn) {
-            deleteBtn.onclick = async () => {
-                if (!confirm("Opravdu chceš smazat tento příspěvek?")) return;
-
-                // Smazat komentáře
-                await supabase
-                    .from("comments")
-                    .delete()
-                    .eq("photo_id", photo.id);
-
-                // Smazat lajky
-                await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("photo_id", photo.id);
-
-                // Smazat samotný příspěvek
-                const { error: deleteError } = await supabase
-                    .from("photos")
-                    .delete()
-                    .eq("id", photo.id);
-
-                if (deleteError) {
-                    console.error("Chyba při mazání příspěvku:", deleteError);
-                    alert("Nepodařilo se smazat příspěvek.");
-                    return;
-                }
-
-                // Odebrat z UI
-                post.remove();
-            };
-        }
-
-
-        // Toggle komentářů
-        const commentToggleBtn = post.querySelector(".comment-toggle-btn");
-        const commentsWrapper = post.querySelector(".comments");
-
-        commentToggleBtn.onclick = () => {
-            commentsWrapper.classList.toggle("hidden");
-        };
-
-        // --- LAJKY ---
-        const likeBtn = post.querySelector(".like-btn");
-        const likeCount = post.querySelector(".like-count");
-
-        const { data: likesData } = await supabase
-            .from("likes")
-            .select("*")
-            .eq("photo_id", photo.id);
-
-        const likes = likesData || [];
-        likeCount.textContent = likes.length;
-
-        const { data: { user } } = await supabase.auth.getUser();
-        let alreadyLiked = likes.some(l => l.user_id === user.id);
-
-        if (alreadyLiked) likeBtn.classList.add("liked");
-
-        likeBtn.onclick = async () => {
-            if (alreadyLiked) {
-                await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("user_id", user.id)
-                    .eq("photo_id", photo.id);
-
-                alreadyLiked = false;
-                likeBtn.classList.remove("liked");
-                likeCount.textContent = Number(likeCount.textContent) - 1;
-            } else {
-                await supabase
-                    .from("likes")
-                    .insert([{ user_id: user.id, photo_id: photo.id }]);
-
-                alreadyLiked = true;
-                likeBtn.classList.add("liked");
-                likeCount.textContent = Number(likeCount.textContent) + 1;
-            }
-        };
-
-        feed.appendChild(post);
-    }
+function $(sel) {
+    return document.querySelector(sel);
 }
 
-async function loadFollowingFeed() {
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "Načítám...";
-
-    const { data: { user } } = await supabase.auth.getUser();
-    const myId = user.id;
-
-    // 1) Zjistíme, koho sleduju
-    const { data: following } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", myId);
-
-    if (!following || following.length === 0) {
-        feed.innerHTML = "<p>Začni někoho sledovat!</p>";
-        return;
-    }
-
-    const followingIds = following.map(f => f.following_id);
-
-    // 2) Načteme fotky od sledovaných
-    const { data: photos } = await supabase
-        .from("photos")
-        .select("id, url, caption, created_at, user_id")
-        .in("user_id", followingIds)
-        .order("created_at", { ascending: false });
-
-    if (!photos || photos.length === 0) {
-        feed.innerHTML = "<p>Zatím žádné příspěvky.</p>";
-        return;
-    }
-
-    // 3) Načteme profily autorů
-    const userIds = [...new Set(photos.map(p => p.user_id))];
-
-    const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .in("id", userIds);
-
-    const profileMap = {};
-    profiles.forEach(p => profileMap[p.id] = p);
-
-    // 4) Render
-    feed.innerHTML = "";
-
-    for (const photo of photos) {
-        const author = profileMap[photo.user_id];
-
-        const post = document.createElement("div");
-        post.className = "post";
-
-        post.innerHTML = `
-            <div class="post-header">
-                <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
-                <div>
-                    <div class="post-username" data-user="${author.id}">
-                        ${author.username}
-                    </div>
-                    <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
-                </div>
-            </div>
-
-            <img class="post-image" src="${photo.url}">
-            ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
-
-            <div class="post-actions">
-                <button class="like-btn">❤️</button>
-                <span class="like-count">0</span>
-                <button class="comment-toggle-btn">💬</button>
-                <span class="comment-count">0</span>
-            </div>
-
-            <div class="comments hidden">
-                <div class="comment-list"></div>
-                <input class="comment-input" placeholder="Napiš komentář...">
-            </div>
-        `;
-
-        // Klik na jméno autora
-        post.querySelector(".post-username").onclick = () => {
-            window.location.href = `profile.html?user=${author.id}`;
-        };
-
-        // --- TOGGLE KOMENTÁŘŮ ---
-        const commentToggleBtn = post.querySelector(".comment-toggle-btn");
-        const commentsWrapper = post.querySelector(".comments");
-
-        commentToggleBtn.onclick = () => {
-            commentsWrapper.classList.toggle("hidden");
-        };
-
-        // --- KOMENTÁŘE ---
-        const commentList = post.querySelector(".comment-list");
-        const commentInput = post.querySelector(".comment-input");
-        const commentCount = post.querySelector(".comment-count");
-
-        // Načtení komentářů
-        const { data: commentsData } = await supabase
-            .from("comments")
-            .select("text, user_id")
-            .eq("photo_id", photo.id)
-            .order("created_at", { ascending: true });
-
-        const comments = commentsData || [];
-        commentCount.textContent = comments.length;
-
-        // Render komentářů s username + kliknutím
-        for (const c of comments) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("username")
-                .eq("id", c.user_id)
-                .single();
-
-            const div = document.createElement("div");
-            div.className = "comment";
-
-            div.innerHTML = `
-                <strong class="comment-username" data-user="${c.user_id}">
-                    ${profile?.username || "uživatel"}
-                </strong>
-                ${c.text}
-            `;
-
-            div.querySelector(".comment-username").onclick = () => {
-                window.location.href = `profile.html?user=${c.user_id}`;
-            };
-
-            commentList.appendChild(div);
-        }
-
-        // Přidání komentáře
-        commentInput.addEventListener("keydown", async (e) => {
-            if (e.key === "Enter" && commentInput.value.trim() !== "") {
-                e.preventDefault();
-
-                const text = commentInput.value.trim();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                const { error: insertError } = await supabase
-                    .from("comments")
-                    .insert([{ user_id: user.id, photo_id: photo.id, text }]);
-
-                if (insertError) {
-                    console.error("INSERT COMMENT ERROR:", insertError);
-                    return;
-                }
-
-                // Získáme username
-                const { data: profile } = await supabase
-                    .from("profiles")
-                    .select("username")
-                    .eq("id", user.id)
-                    .single();
-
-                // Přidáme do UI
-                const div = document.createElement("div");
-                div.className = "comment";
-
-                div.innerHTML = `
-                    <strong class="comment-username" data-user="${user.id}">
-                        ${profile?.username || "já"}
-                    </strong>
-                    ${text}
-                `;
-
-                div.querySelector(".comment-username").onclick = () => {
-                    window.location.href = `profile.html?user=${user.id}`;
-                };
-
-                commentList.appendChild(div);
-
-                commentInput.value = "";
-                commentCount.textContent = Number(commentCount.textContent) + 1;
-            }
-        });
-
-        // --- LAJKY ---
-        const likeBtn = post.querySelector(".like-btn");
-        const likeCount = post.querySelector(".like-count");
-
-        const { data: likesData } = await supabase
-            .from("likes")
-            .select("*")
-            .eq("photo_id", photo.id);
-
-        const likes = likesData || [];
-        likeCount.textContent = likes.length;
-
-        let alreadyLiked = likes.some(l => l.user_id === myId);
-
-        if (alreadyLiked) likeBtn.classList.add("liked");
-
-        likeBtn.onclick = async () => {
-            if (alreadyLiked) {
-                await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("user_id", myId)
-                    .eq("photo_id", photo.id);
-
-                alreadyLiked = false;
-                likeBtn.classList.remove("liked");
-                likeCount.textContent = Number(likeCount.textContent) - 1;
-            } else {
-                await supabase
-                    .from("likes")
-                    .insert([{ user_id: myId, photo_id: photo.id }]);
-
-                alreadyLiked = true;
-                likeBtn.classList.add("liked");
-                likeCount.textContent = Number(likeCount.textContent) + 1;
-            }
-        };
-
-        feed.appendChild(post);
-    }
-}
-
-async function loadCombinedFeed(myId) {
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "Načítám...";
-
-    // 1) Zjistíme, koho sleduju
-    const { data: following } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", myId);
-
-    const followingIds = following ? following.map(f => f.following_id) : [];
-
-    // Přidáme i mě samotného
-    followingIds.push(myId);
-
-    // 2) Načteme fotky od mě + sledovaných
-    const { data: photos, error: photosError } = await supabase
-        .from("photos")
-        .select("id, url, caption, created_at, user_id")
-        .in("user_id", followingIds)
-        .order("created_at", { ascending: false });
-
-    if (photosError) {
-        console.error("Chyba při načítání fotek:", photosError);
-        feed.innerHTML = "<p>Nepodařilo se načíst příspěvky.</p>";
-        return;
-    }
-
-    if (!photos || photos.length === 0) {
-        feed.innerHTML = "<p>Zatím žádné příspěvky.</p>";
-        return;
-    }
-
-    // 3) Načteme profily autorů
-    const userIds = [...new Set(photos.map(p => p.user_id))];
-
-    const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .in("id", userIds);
-
-    const profileMap = {};
-    profiles.forEach(p => profileMap[p.id] = p);
-
-    // 4) Render feedu
-    feed.innerHTML = "";
-
-    for (const photo of photos) {
-        const author = profileMap[photo.user_id];
-
-        const post = document.createElement("div");
-        post.className = "post";
-
-        post.innerHTML = `
-            <div class="post-header">
-                <img class="post-avatar" src="${author.avatar_url || '/assets/default-avatar.png'}">
-                <div>
-                    <div class="post-username" data-user="${author.id}">
-                        ${author.username}
-                    </div>
-                    <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
-                </div>
-
-                ${author.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
-            </div>
-
-            <img class="post-image" src="${photo.url}">
-            ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
-
-            <div class="post-actions">
-                <button class="like-btn">❤️</button>
-                <span class="like-count">0</span>
-                <button class="comment-toggle-btn">💬</button>
-                <span class="comment-count">0</span>
-            </div>
-
-            <div class="comments hidden">
-                <div class="comment-list"></div>
-                <input class="comment-input" placeholder="Napiš komentář...">
-            </div>
-        `;
-
-        // Klik na username
-        post.querySelector(".post-username").onclick = () => {
-            window.location.href = `profile.html?user=${author.id}`;
-        };
-
-        // DELETE BUTTON
-        const deleteBtn = post.querySelector(".delete-post-btn");
-        if (deleteBtn) {
-            deleteBtn.onclick = async () => {
-                if (!confirm("Opravdu chceš smazat tento příspěvek?")) return;
-
-                await supabase.from("comments").delete().eq("photo_id", photo.id);
-                await supabase.from("likes").delete().eq("photo_id", photo.id);
-
-                const { error: deleteError } = await supabase
-                    .from("photos")
-                    .delete()
-                    .eq("id", photo.id);
-
-                if (deleteError) {
-                    alert("Nepodařilo se smazat příspěvek.");
-                    return;
-                }
-
-                post.remove();
-            };
-        }
-
-        // KOMENTÁŘE
-        const commentList = post.querySelector(".comment-list");
-        const commentInput = post.querySelector(".comment-input");
-        const commentCount = post.querySelector(".comment-count");
-
-        const { data: commentsData } = await supabase
-            .from("comments")
-            .select("text, user_id")
-            .eq("photo_id", photo.id)
-            .order("created_at", { ascending: true });
-
-        const comments = commentsData || [];
-        commentCount.textContent = comments.length;
-
-        for (const c of comments) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("username")
-                .eq("id", c.user_id)
-                .single();
-
-            const div = document.createElement("div");
-            div.className = "comment";
-
-            div.innerHTML = `
-                <strong class="comment-username" data-user="${c.user_id}">
-                    ${profile?.username || "uživatel"}
-                </strong>
-                ${c.text}
-            `;
-
-            div.querySelector(".comment-username").onclick = () => {
-                window.location.href = `profile.html?user=${c.user_id}`;
-            };
-
-            commentList.appendChild(div);
-        }
-
-        commentInput.addEventListener("keydown", async (e) => {
-            if (e.key === "Enter" && commentInput.value.trim() !== "") {
-                e.preventDefault();
-
-                const text = commentInput.value.trim();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                await supabase
-                    .from("comments")
-                    .insert([{ user_id: user.id, photo_id: photo.id, text }]);
-
-                const { data: profile } = await supabase
-                    .from("profiles")
-                    .select("username")
-                    .eq("id", user.id)
-                    .single();
-
-                const div = document.createElement("div");
-                div.className = "comment";
-
-                div.innerHTML = `
-                    <strong class="comment-username" data-user="${user.id}">
-                        ${profile?.username || "já"}
-                    </strong>
-                    ${text}
-                `;
-
-                div.querySelector(".comment-username").onclick = () => {
-                    window.location.href = `profile.html?user=${user.id}`;
-                };
-
-                commentList.appendChild(div);
-
-                commentInput.value = "";
-                commentCount.textContent = Number(commentCount.textContent) + 1;
-            }
-        });
-
-        // LIKE
-        const likeBtn = post.querySelector(".like-btn");
-        const likeCount = post.querySelector(".like-count");
-
-        const { data: likesData } = await supabase
-            .from("likes")
-            .select("*")
-            .eq("photo_id", photo.id);
-
-        const likes = likesData || [];
-        likeCount.textContent = likes.length;
-
-        let alreadyLiked = likes.some(l => l.user_id === myId);
-
-        if (alreadyLiked) likeBtn.classList.add("liked");
-
-        likeBtn.onclick = async () => {
-            if (alreadyLiked) {
-                await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("user_id", myId)
-                    .eq("photo_id", photo.id);
-
-                alreadyLiked = false;
-                likeBtn.classList.remove("liked");
-                likeCount.textContent = Number(likeCount.textContent) - 1;
-            } else {
-                await supabase
-                    .from("likes")
-                    .insert([{ user_id: myId, photo_id: photo.id }]);
-
-                alreadyLiked = true;
-                likeBtn.classList.add("liked");
-                likeCount.textContent = Number(likeCount.textContent) + 1;
-            }
-        };
-
-        feed.appendChild(post);
+/* ---------------------------------------------------
+   RENDER PROFILU
+--------------------------------------------------- */
+
+function renderProfile({ email, created_at, username, bio, avatar_url }) {
+    const avatar = $("#avatar");
+    const usernameDisplay = $("#usernameDisplay");
+    const bioDisplay = $("#bioDisplay");
+    const emailDisplay = $("#emailDisplay");
+    const createdAtDisplay = $("#createdAtDisplay");
+
+    if (avatar) avatar.src = avatar_url || "/assets/default-avatar.png";
+    if (usernameDisplay) usernameDisplay.textContent = username || "";
+    if (bioDisplay) bioDisplay.textContent = bio || "";
+    if (emailDisplay) emailDisplay.textContent = email || "";
+    if (createdAtDisplay) {
+        const d = created_at ? new Date(created_at) : new Date();
+        createdAtDisplay.textContent = d.toLocaleDateString();
     }
 }
 
 /* ---------------------------------------------------
-   1) FUNKCE – MŮJ PROFIL
+   KOMENTÁŘE + ODPOVĚDI
 --------------------------------------------------- */
-async function loadMyProfile() {
-    localStorage.removeItem("profileUser");
 
+// načtení komentářů + odpovědí pro jeden post
+async function loadCommentsForPhoto(photoId, myId, commentList, commentCountEl, photoOwnerId) {
+    if (!commentList) return;
+
+    const { data: commentsData, error } = await supabase
+        .from("comments")
+        .select("id, text, user_id, parent_id, created_at")
+        .eq("photo_id", photoId)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        console.error("Chyba při načítání komentářů:", error);
+        return;
+    }
+
+    const comments = commentsData || [];
+    const rootComments = comments.filter(c => !c.parent_id);
+    const repliesByParent = new Map();
+
+    for (const c of comments) {
+        if (c.parent_id) {
+            if (!repliesByParent.has(c.parent_id)) repliesByParent.set(c.parent_id, []);
+            repliesByParent.get(c.parent_id).push(c);
+        }
+    }
+
+    commentList.innerHTML = "";
+    if (commentCountEl) {
+        commentCountEl.textContent = rootComments.length;
+    }
+
+
+    for (const c of rootComments) {
+        const commentDiv = await createCommentElement(
+            c,
+            myId,
+            photoId,
+            repliesByParent,
+            photoOwnerId
+        );
+        commentList.appendChild(commentDiv);
+    }
+}
+
+// vytvoření DOM pro jeden komentář + jeho odpovědi
+async function createCommentElement(c, myId, photoId, repliesByParent, photoOwnerId) {
+    const commentDiv = document.createElement("div");
+    commentDiv.className = "comment";
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", c.user_id)
+        .single();
+
+    // HLAVNÍ KOMENTÁŘ
+    commentDiv.innerHTML = `
+        <div class="comment-row">
+            <div class="comment-left">
+                <strong class="comment-username" data-user="${c.user_id}">
+                    ${profile?.username || "uživatel"}
+                </strong>
+                <span class="comment-text">${c.text}</span>
+            </div>
+
+            ${(c.user_id === myId || photoOwnerId === myId) ? `<button class="delete-comment-btn">×</button>` : ""}
+        </div>
+
+        <button class="reply-btn">↳ Odpovědět</button>
+        <input class="reply-input hidden" placeholder="Napiš odpověď…">
+        <div class="reply-list"></div>
+    `;
+
+    // MAZÁNÍ HLAVNÍHO KOMENTÁŘE
+    const deleteBtn = commentDiv.querySelector(".delete-comment-btn");
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", async () => {
+            await supabase.from("comments").delete().eq("id", c.id);
+            commentDiv.remove();
+        });
+    }
+
+    // KLIK NA USERNAME
+    const usernameEl = commentDiv.querySelector(".comment-username");
+    if (usernameEl) {
+        usernameEl.addEventListener("click", () => {
+            window.location.href = `profile.html?user=${c.user_id}`;
+        });
+    }
+
+    const replyBtn = commentDiv.querySelector(".reply-btn");
+    const replyInput = commentDiv.querySelector(".reply-input");
+    const replyList = commentDiv.querySelector(".reply-list");
+
+    if (replyBtn && replyInput) {
+        replyBtn.onclick = () => {
+            replyInput.classList.toggle("hidden");
+            replyInput.focus();
+        };
+    }
+
+    // NOVÁ ODPOVĚĎ
+    if (replyInput && replyList) {
+        replyInput.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter" && replyInput.value.trim() !== "") {
+                e.preventDefault();
+
+                const text = replyInput.value.trim();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: newReply } = await supabase
+                    .from("comments")
+                    .insert({
+                        text,
+                        user_id: user.id,
+                        photo_id: photoId,
+                        parent_id: c.id
+                    })
+                    .select()
+                    .single();
+
+                const { data: myProfile } = await supabase
+                    .from("profiles")
+                    .select("username")
+                    .eq("id", user.id)
+                    .single();
+
+                const replyDiv = document.createElement("div");
+                replyDiv.className = "reply";
+
+                replyDiv.innerHTML = `
+                    <div class="comment-row">
+                        <div class="comment-left">
+                            <strong class="comment-username" data-user="${user.id}">
+                                ${myProfile?.username || "já"}
+                            </strong>
+                            <span class="comment-text">${text}</span>
+                        </div>
+
+                        <button class="delete-comment-btn">×</button>
+                    </div>
+                `;
+
+                // klik na username
+                const replyUserEl = replyDiv.querySelector(".comment-username");
+                if (replyUserEl) {
+                    replyUserEl.addEventListener("click", () => {
+                        window.location.href = `profile.html?user=${user.id}`;
+                    });
+                }
+
+                // MAZÁNÍ NOVÉ ODPOVĚDI
+                const deleteReplyBtn = replyDiv.querySelector(".delete-comment-btn");
+                if (deleteReplyBtn) {
+                    deleteReplyBtn.addEventListener("click", async () => {
+                        await supabase.from("comments").delete().eq("id", newReply.id);
+                        replyDiv.remove();
+                    });
+                }
+
+                replyList.appendChild(replyDiv);
+                replyInput.value = "";
+                replyInput.classList.add("hidden");
+            }
+        });
+    }
+
+    // EXISTUJÍCÍ ODPOVĚDI
+    if (replyList && repliesByParent.has(c.id)) {
+        const replies = repliesByParent.get(c.id);
+
+        for (const r of replies) {
+            const { data: replyAuthor } = await supabase
+                .from("profiles")
+                .select("username")
+                .eq("id", r.user_id)
+                .single();
+
+            const replyDiv = document.createElement("div");
+            replyDiv.className = "reply";
+
+            replyDiv.innerHTML = `
+                <div class="comment-row">
+                    <div class="comment-left">
+                        <strong class="comment-username" data-user="${r.user_id}">
+                            ${replyAuthor?.username || "uživatel"}
+                        </strong>
+                        <span class="comment-text">${r.text}</span>
+                    </div>
+
+                    ${(r.user_id === myId || photoOwnerId === myId) ? `<button class="delete-comment-btn">×</button>` : ""}
+                </div>
+            `;
+
+            // klik na username
+            const replyUserEl = replyDiv.querySelector(".comment-username");
+            if (replyUserEl) {
+                replyUserEl.addEventListener("click", () => {
+                    window.location.href = `profile.html?user=${r.user_id}`;
+                });
+            }
+
+            // MAZÁNÍ EXISTUJÍCÍ ODPOVĚDI
+            const deleteReplyBtn = replyDiv.querySelector(".delete-comment-btn");
+            if (deleteReplyBtn) {
+                deleteReplyBtn.addEventListener("click", async () => {
+                    await supabase.from("comments").delete().eq("id", r.id);
+                    replyDiv.remove();
+                });
+            }
+
+            replyList.appendChild(replyDiv);
+        }
+    }
+
+    return commentDiv;
+}
+
+// přidání nového komentáře
+async function attachNewCommentHandler(photo, myId, commentsWrapper, photoOwnerId) {
+    if (!commentsWrapper) return;
+
+    const commentList = commentsWrapper.querySelector(".comment-list");
+    const commentInput = commentsWrapper.querySelector(".comment-input");
+    const commentCountEl = commentsWrapper.parentElement?.querySelector(".comment-count");
+
+    if (!commentInput || !commentList) return;
+
+    commentInput.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter" && commentInput.value.trim() !== "") {
+            e.preventDefault();
+
+            const text = commentInput.value.trim();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: inserted } = await supabase
+                .from("comments")
+                .insert([{ user_id: user.id, photo_id: photo.id, text }])
+                .select()
+                .single();
+
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("username")
+                .eq("id", user.id)
+                .single();
+
+            const newCommentDiv = document.createElement("div");
+            newCommentDiv.className = "comment";
+
+            newCommentDiv.innerHTML = `
+                <div class="comment-row">
+                    <div class="comment-left">
+                        <strong class="comment-username" data-user="${user.id}">
+                            ${profile?.username || "já"}
+                        </strong>
+                        <span class="comment-text">${text}</span>
+                    </div>
+
+                    ${(user.id === myId || photoOwnerId === myId) ? `<button class="delete-comment-btn">×</button>` : ""}
+                </div>
+
+                <button class="reply-btn">↳ Odpovědět</button>
+                <input class="reply-input hidden" placeholder="Napiš odpověď…">
+                <div class="reply-list"></div>
+            `;
+
+            // klik na username
+            const usernameEl = newCommentDiv.querySelector(".comment-username");
+            if (usernameEl) {
+                usernameEl.addEventListener("click", () => {
+                    window.location.href = `profile.html?user=${user.id}`;
+                });
+            }
+
+            // MAZÁNÍ NOVÉHO KOMENTÁŘE
+            const deleteBtn = newCommentDiv.querySelector(".delete-comment-btn");
+            if (deleteBtn) {
+                deleteBtn.addEventListener("click", async () => {
+                    await supabase.from("comments").delete().eq("id", inserted.id);
+                    newCommentDiv.remove();
+                });
+            }
+
+            // REPLY HANDLER
+            const replyBtn = newCommentDiv.querySelector(".reply-btn");
+            const replyInput = newCommentDiv.querySelector(".reply-input");
+            const replyList = newCommentDiv.querySelector(".reply-list");
+
+            if (replyBtn && replyInput) {
+                replyBtn.onclick = () => {
+                    replyInput.classList.toggle("hidden");
+                    replyInput.focus();
+                };
+            }
+
+            if (replyInput && replyList) {
+                replyInput.addEventListener("keydown", async (e2) => {
+                    if (e2.key === "Enter" && replyInput.value.trim() !== "") {
+                        e2.preventDefault();
+
+                        const replyText = replyInput.value.trim();
+
+                        const { data: newReply } = await supabase
+                            .from("comments")
+                            .insert({
+                                text: replyText,
+                                user_id: user.id,
+                                photo_id: photo.id,
+                                parent_id: inserted.id
+                            })
+                            .select()
+                            .single();
+
+                        const replyDiv = document.createElement("div");
+                        replyDiv.className = "reply";
+
+                        replyDiv.innerHTML = `
+                            <div class="comment-row">
+                                <div class="comment-left">
+                                    <strong class="comment-username" data-user="${user.id}">
+                                        ${profile?.username || "já"}
+                                    </strong>
+                                    <span class="comment-text">${replyText}</span>
+                                </div>
+
+                                ${(user.id === myId || photoOwnerId === myId) ? `<button class="delete-comment-btn">×</button>` : ""}
+                            </div>
+                        `;
+
+                        // klik na username
+                        const replyUserEl = replyDiv.querySelector(".comment-username");
+                        if (replyUserEl) {
+                            replyUserEl.addEventListener("click", () => {
+                                window.location.href = `profile.html?user=${user.id}`;
+                            });
+                        }
+
+                        // MAZÁNÍ NOVÉ ODPOVĚDI
+                        const deleteReplyBtn = replyDiv.querySelector(".delete-comment-btn");
+                        if (deleteReplyBtn) {
+                            deleteReplyBtn.addEventListener("click", async () => {
+                                await supabase.from("comments").delete().eq("id", newReply.id);
+                                replyDiv.remove();
+                            });
+                        }
+
+                        replyList.appendChild(replyDiv);
+                        replyInput.value = "";
+                        replyInput.classList.add("hidden");
+                    }
+                });
+            }
+
+            commentList.appendChild(newCommentDiv);
+            commentInput.value = "";
+
+            if (commentCountEl) {
+                commentCountEl.textContent = (Number(commentCountEl.textContent) + 1).toString();
+            }
+        }
+    });
+}
+
+/* ---------------------------------------------------
+   RENDER POSTU (JEDNOTNÝ PRO VŠECHNY FEEDY)
+--------------------------------------------------- */
+
+async function renderPost(photo, author, myId, feedEl) {
+    const post = document.createElement("div");
+    post.className = "post";
+
+    post.innerHTML = `
+        <div class="post-header">
+            <img class="post-avatar" src="${author?.avatar_url || "/assets/default-avatar.png"}">
+            <div>
+                <div class="post-username" data-user="${author?.id || ""}">
+                    ${author?.username || "uživatel"}
+                </div>
+                <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
+            </div>
+            ${author?.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
+        </div>
+
+        <img class="post-image" src="${photo.url}">
+        ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
+
+        <div class="post-actions">
+            <button class="like-btn">❤️</button>
+            <span class="like-count">0</span>
+            <button class="comment-toggle-btn">💬</button>
+            <span class="comment-count">0</span>
+        </div>
+
+        <div class="comments hidden">
+            <div class="comment-list"></div>
+            <input class="comment-input" placeholder="Napiš komentář...">
+        </div>
+    `;
+
+    const usernameEl = post.querySelector(".post-username");
+    if (usernameEl && author?.id) {
+        usernameEl.addEventListener("click", () => {
+            window.location.href = `profile.html?user=${author.id}`;
+        });
+    }
+
+    const deletePostBtn = post.querySelector(".delete-post-btn");
+    if (deletePostBtn && author?.id === myId) {
+        deletePostBtn.addEventListener("click", async () => {
+            await supabase.from("photos").delete().eq("id", photo.id);
+            post.remove();
+        });
+    }
+
+    const likeBtn = post.querySelector(".like-btn");
+    const likeCount = post.querySelector(".like-count");
+
+    const { data: likesData } = await supabase
+        .from("likes")
+        .select("*")
+        .eq("photo_id", photo.id);
+
+    const likes = likesData || [];
+    if (likeCount) likeCount.textContent = likes.length.toString();
+
+    let alreadyLiked = likes.some(l => l.user_id === myId);
+    if (alreadyLiked && likeBtn) likeBtn.classList.add("liked");
+
+    if (likeBtn && likeCount) {
+        likeBtn.addEventListener("click", async () => {
+            if (alreadyLiked) {
+                await supabase
+                    .from("likes")
+                    .delete()
+                    .eq("user_id", myId)
+                    .eq("photo_id", photo.id);
+
+                alreadyLiked = false;
+                likeBtn.classList.remove("liked");
+                likeCount.textContent = (Number(likeCount.textContent) - 1).toString();
+            } else {
+                await supabase
+                    .from("likes")
+                    .insert([{ user_id: myId, photo_id: photo.id }]);
+
+                alreadyLiked = true;
+                likeBtn.classList.add("liked");
+                likeCount.textContent = (Number(likeCount.textContent) + 1).toString();
+            }
+        });
+    }
+
+    const commentToggleBtn = post.querySelector(".comment-toggle-btn");
+    const commentsWrapper = post.querySelector(".comments");
+    const commentList = post.querySelector(".comment-list");
+    const commentCountEl = post.querySelector(".comment-count");
+
+    // FIX – načtení počtu komentářů před zobrazením postu
+    const { count: rootCommentsCount } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true })
+        .eq("photo_id", photo.id)
+        .is("parent_id", null);
+
+    if (commentCountEl) {
+        commentCountEl.textContent = rootCommentsCount || 0;
+    }
+
+    if (commentToggleBtn && commentsWrapper) {
+        commentToggleBtn.addEventListener("click", async () => {
+            commentsWrapper.classList.toggle("hidden");
+            if (!commentsWrapper.classList.contains("hidden") && commentList) {
+                await loadCommentsForPhoto(photo.id, myId, commentList, commentCountEl, photo.user_id);
+            }
+        });
+    }
+
+    await attachNewCommentHandler(photo, myId, commentsWrapper, photo.user_id);
+
+    if (feedEl) feedEl.appendChild(post);
+}
+
+/* ---------------------------------------------------
+  GALERIE
+--------------------------------------------------- */
+
+async function loadGallery(userId) {
+    const gallery = document.getElementById("tab-content-gallery");
+    if (!gallery) return;
+
+    gallery.innerHTML = "Načítám...";
+
+    const { data: photos, error } = await supabase
+        .from("photos")
+        .select("id, url, user_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        gallery.innerHTML = "Chyba při načítání galerie.";
+        return;
+    }
+
+    if (!photos || photos.length === 0) {
+        gallery.innerHTML = "<p>Žádné fotky.</p>";
+        return;
+    }
+
+    gallery.innerHTML = "";
+
+    const { data: { user: me } } = await supabase.auth.getUser();
+
+    photos.forEach(photo => {
+        const img = document.createElement("img");
+        img.src = photo.url;
+        img.className = "gallery-photo";
+
+        img.addEventListener("click", () => {
+            openPhotoModal(photo, me.id);
+        });
+
+        gallery.appendChild(img);
+    });
+}
+
+function openPhotoModal(photo, myId) {
+    const modal = document.getElementById("photoModal");
+    const modalImg = document.getElementById("photoModalImg");
+    const closeBtn = document.getElementById("photoModalClose");
+    const deleteBtn = document.getElementById("photoDeleteBtn");
+
+    modalImg.src = photo.url;
+    modal.classList.remove("hidden");
+
+    // zobrazit delete jen pokud je to moje fotka
+    if (photo.user_id === myId) {
+        deleteBtn.classList.remove("hidden");
+    } else {
+        deleteBtn.classList.add("hidden");
+    }
+
+    closeBtn.onclick = () => modal.classList.add("hidden");
+
+    deleteBtn.onclick = async () => {
+        await supabase.from("photos").delete().eq("id", photo.id);
+        modal.classList.add("hidden");
+        loadGallery(photo.user_id); // refresh galerie
+    };
+}
+
+/* ---------------------------------------------------
+   FEED FUNKCE
+--------------------------------------------------- */
+
+async function loadUserFeed(userId, targetId = "feed") {
+    const feedEl = document.getElementById(targetId);
+    if (!feedEl) return;
+
+    feedEl.innerHTML = "Načítám...";
+
+    const { data: { user: me } } = await supabase.auth.getUser();
+    if (!me) {
+        goTo("/login.html");
+        return;
+    }
+
+    const myId = me.id;
+
+    const { data: photos, error } = await supabase
+        .from("photos")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("Chyba při načítání feedu:", error);
+        feedEl.innerHTML = "Chyba při načítání feedu.";
+        return;
+    }
+
+    feedEl.innerHTML = "";
+    if (!photos || photos.length === 0) {
+        feedEl.innerHTML = "<p>Žádné příspěvky.</p>";
+        return;
+    }
+
+    for (const photo of photos) {
+        const { data: author } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .eq("id", photo.user_id)
+            .single();
+
+        await renderPost(photo, author, myId, feedEl);
+    }
+}
+
+async function loadCombinedFeed(targetId = "feed") {
+    const feedEl = document.getElementById(targetId);
+    if (!feedEl) return;
+
+    feedEl.innerHTML = "Načítám...";
+
+    const { data: { user: me } } = await supabase.auth.getUser();
+    if (!me) {
+        goTo("/login.html");
+        return;
+    }
+
+    const myId = me.id;
+
+    const { data: following } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", myId);
+
+    const followingIds = (following || []).map(f => f.following_id);
+    const ids = [...new Set([myId, ...followingIds])];
+
+    if (ids.length === 0) {
+        feedEl.innerHTML = "<p>Žádné příspěvky.</p>";
+        return;
+    }
+
+    const { data: photos, error } = await supabase
+        .from("photos")
+        .select("*")
+        .in("user_id", ids)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("Chyba při načítání combined feedu:", error);
+        feedEl.innerHTML = "Chyba při načítání feedu.";
+        return;
+    }
+
+    feedEl.innerHTML = "";
+    if (!photos || photos.length === 0) {
+        feedEl.innerHTML = "<p>Žádné příspěvky.</p>";
+        return;
+    }
+
+    for (const photo of photos) {
+        const { data: author } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .eq("id", photo.user_id)
+            .single();
+
+        await renderPost(photo, author, myId, feedEl);
+    }
+}
+
+async function loadFollowingFeed(targetId = "feed") {
+    const feedEl = document.getElementById(targetId);
+    if (!feedEl) return;
+
+    feedEl.innerHTML = "Načítám...";
+
+    const { data: { user: me } } = await supabase.auth.getUser();
+    if (!me) {
+        goTo("/login.html");
+        return;
+    }
+
+    const myId = me.id;
+
+    const { data: following } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", myId);
+
+    const followingIds = (following || []).map(f => f.following_id);
+    if (followingIds.length === 0) {
+        feedEl.innerHTML = "<p>Ještě nikoho nesleduješ.</p>";
+        return;
+    }
+
+    const { data: photos, error } = await supabase
+        .from("photos")
+        .select("*")
+        .in("user_id", followingIds)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("Chyba při načítání following feedu:", error);
+        feedEl.innerHTML = "Chyba při načítání feedu.";
+        return;
+    }
+
+    feedEl.innerHTML = "";
+    if (!photos || photos.length === 0) {
+        feedEl.innerHTML = "<p>Žádné příspěvky od sledovaných.</p>";
+        return;
+    }
+
+    for (const photo of photos) {
+        const { data: author } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .eq("id", photo.user_id)
+            .single();
+
+        await renderPost(photo, author, myId, feedEl);
+    }
+}
+
+/* ---------------------------------------------------
+   MŮJ PROFIL
+--------------------------------------------------- */
+
+async function loadMyProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         goTo("/login.html");
@@ -795,9 +774,9 @@ async function loadMyProfile() {
     renderProfile({
         email: user.email,
         created_at: user.created_at,
-        username: profile.username,
-        bio: profile.bio,
-        avatar_url: profile.avatar_url
+        username: profile?.username,
+        bio: profile?.bio,
+        avatar_url: profile?.avatar_url
     });
 
     const { count: followers } = await supabase
@@ -810,37 +789,117 @@ async function loadMyProfile() {
         .select("*", { count: "exact", head: true })
         .eq("follower_id", userId);
 
-    document.getElementById("followersCount").textContent = followers + " ";
-    document.getElementById("followingCount").textContent = following + " ";
+    $("#followersCount").textContent = followers + " ";
+    $("#followingCount").textContent = following + " ";
 
-    document.getElementById("followersCount").onclick = () => {
+    $("#followersCount").onclick = () => {
         openFollowModal("Sledující", userId, "followers");
     };
 
-    document.getElementById("followingCount").onclick = () => {
+    $("#followingCount").onclick = () => {
         openFollowModal("Sledování", userId, "following");
     };
 
-    // Tlačítka
-    document.getElementById("backBtn").style.display = "none";
-    document.getElementById("dmBtn").style.display = "none";
-    document.getElementById("followBtn").style.display = "none";
-    document.getElementById("editProfileBtn").style.display = "flex";
-    document.getElementById("changeAvatarBtn").style.display = "flex";
-    document.getElementById("chatBtn").style.display = "flex";
-    document.getElementById("logoutBtn").style.display = "flex";
-    document.querySelector(".upload-btn").style.display = "inline-block";
-    document.getElementById("inboxIcon").onclick = () => {
+    $("#backBtn").style.display = "none";
+    $("#dmBtn").style.display = "none";
+    $("#followBtn").style.display = "none";
+    $("#editProfileBtn").style.display = "flex";
+    $("#changeAvatarBtn").style.display = "flex";
+    $("#chatBtn").style.display = "flex";
+    $("#logoutBtn").style.display = "flex";
+    $(".upload-btn").style.display = "inline-block";
+
+    $("#inboxIcon").onclick = () => {
         window.location.href = "/inbox.html";
     };
 
-    await loadCombinedFeed(user.id);
-    await loadGallery(user.id);
+    // OTEVŘÍT MODAL UPRAVIT PROFIL
+    $("#editProfileBtn").onclick = () => {
+        $("#editModal").style.display = "flex";
+        $("#modalUsername").value = $("#usernameDisplay").textContent;
+        $("#modalBio").value = $("#bioDisplay").textContent;
+    };
+
+    // ZAVŘÍT MODAL
+    $("#closeModalBtn").onclick = () => {
+        $("#editModal").style.display = "none";
+    };
+
+    // ULOŽIT PROFIL
+    $("#saveProfileBtn").onclick = async () => {
+        const newUsername = $("#modalUsername").value.trim();
+        const newBio = $("#modalBio").value.trim();
+
+        const { data: { user } } = await supabase.auth.getUser();
+
+        await supabase
+            .from("profiles")
+            .update({
+                username: newUsername,
+                bio: newBio
+            })
+            .eq("id", user.id);
+
+        $("#usernameDisplay").textContent = newUsername;
+        $("#bioDisplay").textContent = newBio;
+
+        $("#editModal").style.display = "none";
+    };
+
+    // ZMĚNIT AVATAR
+    $("#changeAvatarBtn").onclick = () => {
+        $("#avatarInput").click();
+    };
+
+    // UPLOAD AVATARU
+    $("#avatarInput").onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const filePath = `${user.id}-${Date.now()}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from("avatar")
+            .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+            console.error("Chyba uploadu:", uploadError);
+            return;
+        }
+
+        const { data: publicUrl } = supabase.storage
+            .from("avatar")
+            .getPublicUrl(filePath);
+
+        await supabase
+            .from("profiles")
+            .update({ avatar_url: publicUrl.publicUrl })
+            .eq("id", user.id);
+
+        $("#avatar").src = publicUrl.publicUrl;
+    };
+
+    // CHAT
+    $("#chatBtn").onclick = () => {
+        window.location.href = "/rooms.html";
+    };
+
+    // ODHLÁŠENÍ
+    $("#logoutBtn").onclick = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/login.html";
+    };
+
+    await loadCombinedFeed("feed");
 }
 
 /* ---------------------------------------------------
-   2) FUNKCE – CIZÍ PROFIL
+   CIZÍ PROFIL
 --------------------------------------------------- */
+
 async function loadOtherUser(userId) {
     const { data: profile, error } = await supabase
         .from("profiles")
@@ -861,15 +920,15 @@ async function loadOtherUser(userId) {
         avatar_url: profile.avatar_url
     });
 
-    document.getElementById("backBtn").style.display = "inline-block";
-    document.getElementById("backBtn").onclick = () => history.back();
+    $("#backBtn").style.display = "inline-block";
+    $("#backBtn").onclick = () => history.back();
 
-    document.getElementById("dmBtn").style.display = "inline-block";
-    document.getElementById("editProfileBtn").style.display = "none";
-    document.getElementById("changeAvatarBtn").style.display = "none";
-    document.getElementById("chatBtn").style.display = "none";
-    document.getElementById("logoutBtn").style.display = "none";
-    document.querySelector(".upload-btn").style.display = "none";
+    $("#dmBtn").style.display = "inline-block";
+    $("#editProfileBtn").style.display = "none";
+    $("#changeAvatarBtn").style.display = "none";
+    $("#chatBtn").style.display = "none";
+    $("#logoutBtn").style.display = "none";
+    $(".upload-btn").style.display = "none";
 
     async function updateFollowCounts() {
         const { count: followers } = await supabase
@@ -882,22 +941,22 @@ async function loadOtherUser(userId) {
             .select("*", { count: "exact", head: true })
             .eq("follower_id", userId);
 
-        document.getElementById("followersCount").textContent = followers + " ";
-        document.getElementById("followingCount").textContent = following + " ";
+        $("#followersCount").textContent = followers + " ";
+        $("#followingCount").textContent = following + " ";
     }
 
-    document.getElementById("followersCount").onclick = () => {
+    $("#followersCount").onclick = () => {
         openFollowModal("Sledující", userId, "followers");
     };
 
-    document.getElementById("followingCount").onclick = () => {
+    $("#followingCount").onclick = () => {
         openFollowModal("Sledování", userId, "following");
     };
 
     await updateFollowCounts();
 
     const { data: { user: me } } = await supabase.auth.getUser();
-    const followBtn = document.getElementById("followBtn");
+    const followBtn = $("#followBtn");
     followBtn.style.display = "inline-block";
 
     async function refreshFollowButton() {
@@ -909,322 +968,260 @@ async function loadOtherUser(userId) {
             .maybeSingle();
 
         if (follow) {
-            followBtn.textContent = "Sledujete";
-            followBtn.classList.add("following");
+            followBtn.textContent = "Přestat sledovat";
         } else {
             followBtn.textContent = "Sledovat";
-            followBtn.classList.remove("following");
         }
     }
 
-    await refreshFollowButton();
-
     followBtn.onclick = async () => {
-        const { data: current } = await supabase
+        const { data: follow } = await supabase
             .from("follows")
             .select("*")
             .eq("follower_id", me.id)
             .eq("following_id", userId)
             .maybeSingle();
 
-        if (current) {
-            await supabase.from("follows").delete().eq("id", current.id);
+        if (follow) {
+            await supabase
+                .from("follows")
+                .delete()
+                .eq("follower_id", me.id)
+                .eq("following_id", userId);
         } else {
             await supabase
                 .from("follows")
                 .insert([{ follower_id: me.id, following_id: userId }]);
         }
 
-        await refreshFollowButton();
         await updateFollowCounts();
+        await refreshFollowButton();
     };
 
-    document.getElementById("dmBtn").onclick = async () => {
-        const myId = me.id;
-        const targetId = userId;
+    $("#dmBtn").onclick = async () => {
+        const { data: { user: me } } = await supabase.auth.getUser();
 
+        // 1) Najdi existující DM
         const { data: existingChat } = await supabase
             .from("dms")
             .select("*")
             .or(
-                `and(user1_id.eq.${myId},user2_id.eq.${targetId}),and(user1_id.eq.${targetId},user2_id.eq.${myId})`
+                `and(user1_id.eq.${me.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${me.id})`
             )
             .maybeSingle();
 
         if (existingChat) {
-            window.location.href = `/dm.html?chatId=${existingChat.id}`;
+            window.location.href = `/messages.html?chatId=${existingChat.id}`;
             return;
         }
 
-        const { data: newChat, error: insertError } = await supabase
+        // 2) Pokud neexistuje → vytvoř nový
+        const { data: newChat } = await supabase
             .from("dms")
-            .insert([{ user1_id: myId, user2_id: targetId }])
+            .insert([
+                { user1_id: me.id, user2_id: userId }
+            ])
             .select()
             .single();
 
-        if (insertError) {
-            alert("Chyba při vytváření chatu.");
-            return;
-        }
-
-        window.location.href = `/dm.html?chatId=${newChat.id}`;
+        window.location.href = `/messages.html?chatId=${newChat.id}`;
     };
 
-    // Získáme přihlášeného uživatele
-    const { data: { user: meUser } } = await supabase.auth.getUser();
-
-    // Pokud jsem na SVÉM profilu
-    if (userId === meUser.id) {
-
-        // Zobrazím správné UI pro můj profil
-        document.getElementById("editProfileBtn").style.display = "inline-block";
-        document.getElementById("changeAvatarBtn").style.display = "inline-block";
-        document.getElementById("logoutBtn").style.display = "inline-block";
-        document.querySelector(".upload-btn").style.display = "inline-block";
-
-        document.getElementById("dmBtn").style.display = "none";
-        document.getElementById("followBtn").style.display = "none";
-
-        // Načtu MŮJ feed
-        await loadUserFeed(meUser.id);
-        await loadGallery(meUser.id);
-        return;
-    }
-
-    // Jinak → cizí profil
-    await loadUserFeed(userId);
-    await loadGallery(userId);
-
+    await refreshFollowButton();
+    await loadUserFeed(userId, "feed");
 }
 
-/* ---------------------------------------------------
-   3) FUNKCE – RENDER PROFILU
---------------------------------------------------- */
-function renderProfile(data) {
-    document.getElementById("emailDisplay").textContent = data.email;
-    document.getElementById("createdAtDisplay").textContent =
-        new Date(data.created_at).toLocaleDateString("cs-CZ");
-
-    document.getElementById("usernameDisplay").textContent = data.username;
-    document.getElementById("bioDisplay").textContent = data.bio || "Bez popisu";
-
-    if (data.avatar_url) {
-        document.getElementById("avatar").src = data.avatar_url;
-    }
-}
-
-/* ---------------------------------------------------
-   4) ZMĚNA AVATARU
---------------------------------------------------- */
-document.getElementById("changeAvatarBtn").onclick = () => {
-    document.getElementById("avatarInput").click();
-};
-
-document.getElementById("avatarInput").onchange = async (e) => {
+document.getElementById("uploadPhoto").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const { data: { user } } = await supabase.auth.getUser();
-    const fileName = `${user.id}-${Date.now()}`;
+    if (!user) return;
 
-    const { error: uploadError } = await supabase.storage
-        .from("avatar")
-        .upload(fileName, file, { cacheControl: "3600", upsert: true });
+    const fileName = `${user.id}_${Date.now()}`;
 
-    if (uploadError) {
-        alert("Chyba při nahrávání obrázku.");
-        return;
-    }
-
-    const { data: publicUrlData } = supabase.storage
-        .from("avatar")
-        .getPublicUrl(fileName);
-
-    const avatarUrl = publicUrlData.publicUrl;
-
-    const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
-
-    if (updateError) {
-        alert("Chyba při ukládání URL.");
-        return;
-    }
-
-    document.getElementById("avatar").src = avatarUrl;
-    alert("Avatar aktualizován!");
-};
-
-/* ---------------------------------------------------
-   5) TLAČÍTKA
---------------------------------------------------- */
-document.getElementById("logoutBtn").onclick = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login.html";
-};
-
-document.getElementById("chatBtn").onclick = () => {
-    localStorage.removeItem("profileUser");
-    window.location.href = "/rooms.html";
-};
-
-document.getElementById("editProfileBtn").onclick = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const { data } = await supabase
-        .from("profiles")
-        .select("username, bio")
-        .eq("id", user.id)
-        .single();
-
-    document.getElementById("modalUsername").value = data.username || "";
-    document.getElementById("modalBio").value = data.bio || "";
-
-    document.getElementById("editModal").style.display = "flex";
-};
-
-document.getElementById("closeModalBtn").onclick = () => {
-    document.getElementById("editModal").style.display = "none";
-};
-
-document.getElementById("saveProfileBtn").onclick = async () => {
-    const newUsername = document.getElementById("modalUsername").value;
-    const newBio = document.getElementById("modalBio").value;
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    await supabase
-        .from("profiles")
-        .update({ username: newUsername, bio: newBio })
-        .eq("id", user.id);
-
-    document.getElementById("editModal").style.display = "none";
-    loadMyProfile();
-};
-
-/* ---------------------------------------------------
-   6) UPLOAD FOTKY DO GALERIE
---------------------------------------------------- */
-document.getElementById('uploadPhoto').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user.id;
-    const fileName = Date.now() + "_" + file.name;
-
-    const { error } = await supabase.storage
-        .from('user_photos')
-        .upload(`${userId}/${fileName}`, file);
+    const { data, error } = await supabase.storage
+        .from("user_photos")
+        .upload(fileName, file);
 
     if (error) {
-        console.error(error);
+        console.error("Chyba při nahrávání fotky:", error);
         alert("Nepodařilo se nahrát fotku.");
         return;
     }
 
-    const { data: urlData } = supabase
-        .storage
+    const { data: urlData } = supabase.storage
         .from("user_photos")
-        .getPublicUrl(`${userId}/${fileName}`);
+        .getPublicUrl(fileName);
 
-    await supabase.from("photos").insert({
-        user_id: userId,
-        url: urlData.publicUrl,
-        caption: ""
-    });
+    const photoUrl = urlData.publicUrl;
 
-    loadGallery(userId);
-};
+    const { error: dbError } = await supabase
+        .from("photos")
+        .insert({
+            user_id: user.id,
+            url: photoUrl
+        });
 
-/* ---------------------------------------------------
-   7) NAČÍTÁNÍ GALERIE
---------------------------------------------------- */
-async function loadGallery(targetUserId) {
-    const { data, error } = await supabase.storage
-        .from('user_photos')
-        .list(`${targetUserId}/`, { limit: 100 });
-
-    if (error) {
-        console.error(error);
+    if (dbError) {
+        console.error("Chyba při ukládání do DB:", dbError);
+        alert("Fotka se nahrála, ale nepodařilo se uložit do databáze.");
         return;
     }
 
-    const gallery = document.getElementById('gallery');
-    gallery.innerHTML = "";
+    await loadGallery(user.id);
+});
 
-    // Zjistíme, jestli se díváme na svůj profil
-    const { data: { user } } = await supabase.auth.getUser();
-    const isMyProfile = user && user.id === targetUserId;
 
-    data.forEach(file => {
-        const url = supabase.storage
-            .from('user_photos')
-            .getPublicUrl(`${targetUserId}/${file.name}`).data.publicUrl;
+/* ---------------------------------------------------
+   FOLLOW MODAL
+--------------------------------------------------- */
 
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('gallery-item');
+async function openFollowModal(title, userId, type) {
+    const modal = $("#followModal");
+    const modalTitle = $("#modalTitle");
+    const modalList = $("#modalList");
+    const closeModalBtn = $("#closeModal");
 
-        const img = document.createElement('img');
-        img.src = url;
-        img.onclick = () => openPhoto(url);
+    if (!modal || !modalTitle || !modalList || !closeModalBtn) return;
 
-        wrapper.appendChild(img);
+    modalTitle.textContent = title;
+    modalList.innerHTML = "Načítám...";
 
-        if (isMyProfile) {
-            const del = document.createElement('button');
-            del.classList.add('delete-photo');
-            del.textContent = "×";
+    // otevřít modal
+    modal.style.display = "block";
 
-            del.onclick = async (e) => {
-                e.stopPropagation(); // aby se neotevřel lightbox
+    // zavřít modal
+    closeModalBtn.onclick = () => {
+        modal.style.display = "none";
+    };
 
-                const { error: deleteError } = await supabase.storage
-                    .from('user_photos')
-                    .remove([`${targetUserId}/${file.name}`]);
+    // načtení followerů / following
+    let query;
+    if (type === "followers") {
+        query = supabase
+            .from("follows")
+            .select("follower_id, profiles!follower_id(username, avatar_url)")
+            .eq("following_id", userId);
+    } else {
+        query = supabase
+            .from("follows")
+            .select("following_id, profiles!following_id(username, avatar_url)")
+            .eq("follower_id", userId);
+    }
 
-                if (deleteError) {
-                    console.error(deleteError);
-                    alert("Nepodařilo se smazat fotku.");
-                    return;
-                }
+    const { data, error } = await query;
 
-                loadGallery(targetUserId);
-            };
+    if (error) {
+        console.error("Chyba při načítání follow seznamu:", error);
+        modalList.innerHTML = "Chyba při načítání.";
+        return;
+    }
 
-            wrapper.appendChild(del);
+    modalList.innerHTML = "";
+
+    // vygenerování řádků
+    (data || []).forEach(item => {
+        const profile = item.profiles;
+        const otherUserId = type === "followers" ? item.follower_id : item.following_id;
+
+        const row = document.createElement("div");
+        row.className = "follow-row";
+        row.innerHTML = `
+            <img src="${profile?.avatar_url || "/assets/default-avatar.png"}" class="follow-avatar">
+            <span class="follow-username" data-user="${otherUserId}">
+                ${profile?.username || "uživatel"}
+            </span>
+        `;
+
+        modalList.appendChild(row);
+    });
+
+    // klikání na uživatele (event delegation)
+    modalList.onclick = (e) => {
+        const userEl = e.target.closest(".follow-username");
+        if (!userEl) return;
+
+        const uid = userEl.dataset.user;
+        if (uid) {
+            window.location.href = `/profile.html?user=${uid}`;
         }
+    };
+}
 
-        gallery.appendChild(wrapper);
+/* ---------------------------------------------------
+   INIT PROFILU + TABY
+--------------------------------------------------- */
+
+function initTabs() {
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const feedTab = $("#tab-content-feed");
+    const galleryTab = $("#tab-content-gallery");
+    const marketTab = $("#tab-content-market");
+    const uploadBtn = $(".upload-btn");
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            tabButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const tab = btn.dataset.tab;
+
+            if (tab === "feed") {
+                feedTab.classList.remove("hidden");
+                galleryTab.classList.add("hidden");
+                marketTab.classList.add("hidden");
+
+                if (uploadBtn) uploadBtn.classList.add("hidden");
+            }
+
+            else if (tab === "gallery") {
+                feedTab.classList.add("hidden");
+                marketTab.classList.add("hidden");
+                galleryTab.classList.remove("hidden");
+
+                const isMyProfile = !new URLSearchParams(window.location.search).get("user");
+                if (uploadBtn && isMyProfile) uploadBtn.classList.remove("hidden");
+
+                (async () => {
+                    const userParam = getQueryParam("user");
+                    if (userParam) {
+                        await loadGallery(userParam);
+                    } else {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        await loadGallery(user.id);
+                    }
+                })();
+            }
+
+            else if (tab === "market") {
+                feedTab.classList.add("hidden");
+                galleryTab.classList.add("hidden");
+                marketTab.classList.remove("hidden");
+
+                if (uploadBtn) uploadBtn.classList.add("hidden");
+            }
+        });
     });
 }
 
-/* ---------------------------------------------------
-   8) LIGHTBOX
---------------------------------------------------- */
-function openPhoto(url) {
-    document.getElementById('lightbox-img').src = url;
-    document.getElementById('lightbox').classList.remove('hidden');
+async function initProfile() {
+    initTabs();
+
+    const userParam = getQueryParam("user");
+
+    if (userParam) {
+        await loadOtherUser(userParam);
+    } else {
+        await loadMyProfile();
+    }
 }
 
-document.getElementById('lightbox').onclick = () => {
-    document.getElementById('lightbox').classList.add('hidden');
-};
-
 /* ---------------------------------------------------
-   9) SPUŠTĚNÍ PROFILU
+   START
 --------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", async () => {
-    const params = new URLSearchParams(window.location.search);
-    const userIdFromUrl = params.get("user");
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (userIdFromUrl && userIdFromUrl !== (await supabase.auth.getUser()).data.user.id) {
-        loadOtherUser(userIdFromUrl);
-    } else {
-        loadMyProfile();
-    }
-
+document.addEventListener("DOMContentLoaded", () => {
+    initProfile().catch(err => console.error(err));
 });

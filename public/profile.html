@@ -86,23 +86,39 @@
             </div>
         </div>
 
-        <div class="feed-section">
-            <h3>Feed</h3>
-            <div id="feed" class="feed-list"></div>
+        <div class="profile-tabs">
+            <button class="tab-btn active" data-tab="feed">Feed</button>
+            <button class="tab-btn" data-tab="gallery">Galerie</button>
+            <button class="tab-btn" data-tab="market">Marketplace</button>
         </div>
 
-        <div class="gallery-section">
-            <h3>Galerie</h3>
-
-            <label for="uploadPhoto" class="upload-btn">Nahrát fotku</label>
-            <input type="file" id="uploadPhoto" accept="image/*" style="display:none">
-
-            <div id="gallery" class="gallery-grid"></div>
-            <div id="lightbox" class="lightbox hidden">
-                <img id="lightbox-img">
+        <div id="tab-content-feed">
+            <div class="feed-section">
+                <div id="feed" class="feed-list"></div>
             </div>
         </div>
-    </div>
+
+        <label for="uploadPhoto" class="upload-btn hidden">Nahrát fotku</label>
+        <input type="file" id="uploadPhoto" accept="image/*" style="display:none">
+
+        <div id="tab-content-gallery" class="hidden gallery-grid"></div>
+
+        <div id="photoModal" class="hidden photo-modal">
+            <span id="photoModalClose" class="photo-modal-close">&times;</span>
+            <img id="photoModalImg" class="photo-modal-img">
+            <button id="photoDeleteBtn" class="photo-delete-btn hidden">Smazat</button>
+        </div>
+
+        <div id="tab-content-market" class="hidden">
+            <div class="market-section">
+                <h3>Marketplace</h3>
+                <p>Marketplace brzy…</p>
+            </div>
+        </div>
+
+        <div id="lightbox" class="lightbox hidden">
+            <img id="lightbox-img">
+        </div>
 
     </div>
 

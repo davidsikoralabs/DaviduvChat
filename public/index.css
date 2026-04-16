@@ -78,7 +78,7 @@ body {
     position: absolute;
     top: 130px;
     left: 42%;
-    transform: translate(-60%);
+    transform: translate(-30%);
     background: none;
     border: none;
     color: #6711e8;
@@ -204,6 +204,32 @@ body {
     border-radius: 12px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     color: #eee;
+}
+
+.profile-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    color: #000;
+    border-bottom: 2px solid #000;
+}
+
+.hidden {
+    display: none;
 }
 
 .room {
@@ -486,18 +512,35 @@ button:hover {
     cursor: pointer;
 }
 
-.gallery-grid {
+#tab-content-gallery {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 25px;
+    padding: 10px;
 }
 
-.gallery-grid img {
-    width: 100%;
-    height: 100px;
+#tab-content-gallery .gallery-item {
+    position: relative;
+}
+
+#tab-content-gallery img {
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 6px;
+    cursor: pointer;
+}
+
+.delete-photo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
     cursor: pointer;
 }
 
@@ -508,7 +551,7 @@ button:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 99999;
+    z-index: 999999; 
 }
 
 .lightbox img {
@@ -518,7 +561,7 @@ button:hover {
 }
 
 .hidden {
-    display: none;
+    display: none!important;
 }
 
 .upload-btn {
@@ -701,6 +744,51 @@ button:hover {
     color: #d33;
 }
 
+.photo-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.photo-modal.hidden {
+    display: none;
+}
+
+.photo-modal-img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
+}
+
+.photo-modal-close {
+    position: absolute;
+    top: 10px;
+    left: 50px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+}
+
+.photo-delete-btn {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    background: red;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
 #followModal {
     position: fixed;
     top: 0;
@@ -754,17 +842,25 @@ button:hover {
     gap: 20px;
 }
 
+
 #feed {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
+
 #feed img {
-    width: 300px;
-    height: 300px;
+    width: 100%;
+    height: auto;
     border-radius: 12px;
     object-fit: cover;
+}
+
+.feed-list .post {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .feed-list {
@@ -773,27 +869,30 @@ button:hover {
     gap: 20px;
 }
 
-.feed-list .post {
-    display: block;
-}
-
 .feed-grid {
     display: block;
 }
 
-.gallery-grid img {
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.gallery-photo {
     width: 100%;
-    border-radius: 12px;
+    height: auto;
+    border-radius: 6px;
+    object-fit: cover;
 }
 
 /* Post container */
 .post {
-    max-width: 600px;
+    max-width: 900px;
     margin: 2px auto;
     background: #fff;
-    border: 1px solid #ddd;
+    border: 10px solid #ddd;
     border-radius: 12px;
-    padding-bottom: 10px;
     overflow: hidden;
 }
 
@@ -807,12 +906,6 @@ button:hover {
 }
 
 /* Header */
-.post-header {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-}
-
 .post-header {
     display: flex;
     align-items: center;
@@ -885,21 +978,28 @@ button:hover {
     margin-bottom: 8px;
 }
 
-/* Jednotlivý komentář */
-.comment {
-    font-size: 14px;
-    color: #111;
-    margin-bottom: 6px;
-    line-height: 1.4;
-    background: #f2f2f2;
-    padding: 6px 10px;
-    border-radius: 8px;
+.comment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Username v komentáři */
-.comment strong {
-    font-weight: 600;
-    color: #430fff;
+.comment-left {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.delete-comment-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.delete-comment-btn:hover {
+    color: red;
 }
 
 /* Tlačítko pro otevření komentářů */
@@ -932,4 +1032,64 @@ button:hover {
 
 .delete-post-btn:hover {
     color: #d00;
+}
+
+/* KOMENTÁŘE */
+.comment {
+    display: flex;
+    flex-direction: column;
+    color: #111;
+    margin-bottom: 10px;
+    padding-left: 0;
+}
+
+.comment strong {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.comment-text {
+    margin-left: 0;
+    margin-bottom: 4px;
+}
+
+/* Odpověď */
+.reply {
+    margin-left: 20px;
+    padding-left: 10px;
+    border-left: 2px solid #ddd;
+    margin-top: 5px;
+}
+
+.reply strong {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reply-btn {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #007bff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.reply-input {
+    margin-top: 5px;
+    padding: 6px;
+    font-size: 14px;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.reply-list {
+    margin-top: 5px;
+}
+
+/* Skrytý input */
+.hidden {
+    display: none !important;
 }
