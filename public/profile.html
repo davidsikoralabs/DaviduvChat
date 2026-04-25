@@ -98,16 +98,30 @@
             </div>
         </div>
 
-        <label for="uploadPhoto" class="upload-btn hidden">Nahrát fotku</label>
-        <input type="file" id="uploadPhoto" accept="image/*" style="display:none">
+        <input type="file" id="uploadPhoto" accept="image/*" multiple style="display:none;">
+        <label for="uploadPhoto" class="upload-btn">Nahrát fotky</label>
 
-        <div id="tab-content-gallery" class="hidden gallery-grid"></div>
+        <div id="tab-content-gallery" class="hidden">
+            <div class="gallery-grid"></div>
+        </div>
 
         <div id="photoModal" class="hidden photo-modal">
             <span id="photoModalClose" class="photo-modal-close">&times;</span>
             <img id="photoModalImg" class="photo-modal-img">
             <button id="photoDeleteBtn" class="photo-delete-btn hidden">Smazat</button>
         </div>
+
+        <div id="postModal" class="hidden post-modal">
+            <span id="postModalClose" class="post-modal-close">&times;</span>
+
+            <div class="post-modal-carousel">
+                <div class="post-modal-track"></div>
+            </div>
+
+            <button class="post-modal-prev">‹</button>
+            <button class="post-modal-next">›</button>
+        </div>
+
 
         <div id="tab-content-market" class="hidden">
             <div class="market-section">

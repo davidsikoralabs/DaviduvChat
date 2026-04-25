@@ -310,7 +310,7 @@ button:hover {
 .auth-card {
     background: #1e1e1e;
     padding: 25px;
-    width: 320px;
+    width: 290px;
     border-radius: 12px;
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
 }
@@ -509,25 +509,6 @@ button:hover {
     border: none;
     padding: 10px;
     border-radius: 8px;
-    cursor: pointer;
-}
-
-#tab-content-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 25px;
-    padding: 10px;
-}
-
-#tab-content-gallery .gallery-item {
-    position: relative;
-}
-
-#tab-content-gallery img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 6px;
     cursor: pointer;
 }
 
@@ -873,17 +854,40 @@ button:hover {
     display: block;
 }
 
-.gallery-grid {
+#tab-content-gallery {
+    display: flex;
+    justify-content: center;
+}
+
+#tab-content-gallery .gallery-grid {
+    max-width: 900px;   
+    width: 50dvh;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
 }
 
+#tab-content-gallery img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-width: 900px;
+    width: 100%;
+}
+
 .gallery-photo {
     width: 100%;
-    height: auto;
-    border-radius: 6px;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
+    border-radius: 6px;
 }
 
 /* Post container */
@@ -998,8 +1002,13 @@ button:hover {
     cursor: pointer;
 }
 
-.delete-comment-btn:hover {
+.comment-delete {
+    background: none;
+    border: none;
     color: red;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
 }
 
 /* Tlačítko pro otevření komentářů */
@@ -1048,13 +1057,9 @@ button:hover {
     cursor: pointer;
 }
 
-.comment-text {
-    margin-left: 0;
-    margin-bottom: 4px;
-}
-
 /* Odpověď */
 .reply {
+    display: block;
     margin-left: 20px;
     padding-left: 10px;
     border-left: 2px solid #ddd;
@@ -1086,10 +1091,113 @@ button:hover {
 }
 
 .reply-list {
+    display: block;
     margin-top: 5px;
 }
 
 /* Skrytý input */
 .hidden {
     display: none !important;
+}
+
+.comment-author,
+.comment-text {
+    line-height: 1.2;
+}
+
+.post-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.post-modal.hidden {
+    display: none;
+}
+
+.post-modal-carousel {
+    width: 90%;
+    max-width: 800px;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.post-modal-track {
+    display: flex;
+    transition: transform 0.3s ease;
+}
+
+.post-modal-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: auto;
+}
+
+.post-modal-track .post-modal-img {
+    min-width: 100%;
+    flex-shrink: 0;
+}
+
+.post-modal-track img {
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: auto;
+    display: block;
+}
+
+.post-modal-close {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.post-modal-prev,
+.post-modal-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 50px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.post-modal-prev { left: 20px; }
+.post-modal-next { right: 20px; }
+
+.post-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.carousel-track {
+    display: flex;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+.carousel-track img {
+    width: 100%;
+    min-width: 100%;
+    flex-shrink: 0;
+    object-fit: cover;
+    display: block;
 }

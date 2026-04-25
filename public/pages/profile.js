@@ -17,6 +17,12 @@ function $(sel) {
     return document.querySelector(sel);
 }
 
+// Multi-upload listener
+const uploadInput = document.getElementById("uploadPhoto");
+if (uploadInput) {
+    uploadInput.addEventListener("change", handlePhotoUploadMulti);
+}
+
 /* ---------------------------------------------------
    RENDER PROFILU
 --------------------------------------------------- */
@@ -411,10 +417,11 @@ async function attachNewCommentHandler(photo, myId, commentsWrapper, photoOwnerI
 /* ---------------------------------------------------
    RENDER POSTU (JEDNOTNÝ PRO VŠECHNY FEEDY)
 --------------------------------------------------- */
-
-async function renderPost(photo, author, myId, feedEl) {
+async function renderPostMulti(photos, author, myId, feedEl) {
     const post = document.createElement("div");
     post.className = "post";
+
+    const first = photos[0]; // první fotka = hlavní metadata
 
     post.innerHTML = `
         <div class="post-header">
@@ -423,13 +430,23 @@ async function renderPost(photo, author, myId, feedEl) {
                 <div class="post-username" data-user="${author?.id || ""}">
                     ${author?.username || "uživatel"}
                 </div>
-                <div class="post-time">${new Date(photo.created_at).toLocaleString()}</div>
+                <div class="post-time">${new Date(first.created_at).toLocaleString()}</div>
             </div>
             ${author?.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
         </div>
 
-        <img class="post-image" src="${photo.url}">
-        ${photo.caption ? `<div class="post-caption">${photo.caption}</div>` : ""}
+        <div class="post-carousel">
+            <div class="carousel-track">
+                ${photos.map(p => `<img class="post-image" src="${p.url}">`).join("")}
+            </div>
+
+            ${photos.length > 1 ? `
+                <button class="carousel-prev">‹</button>
+                <button class="carousel-next">›</button>
+            ` : ""}
+        </div>
+
+        ${first.caption ? `<div class="post-caption">${first.caption}</div>` : ""}
 
         <div class="post-actions">
             <button class="like-btn">❤️</button>
@@ -444,6 +461,9 @@ async function renderPost(photo, author, myId, feedEl) {
         </div>
     `;
 
+    // -----------------------------
+    // Username click
+    // -----------------------------
     const usernameEl = post.querySelector(".post-username");
     if (usernameEl && author?.id) {
         usernameEl.addEventListener("click", () => {
@@ -451,91 +471,348 @@ async function renderPost(photo, author, myId, feedEl) {
         });
     }
 
+    // -----------------------------
+    // DELETE POST (smaže všechny fotky se stejným post_id)
+    // -----------------------------
     const deletePostBtn = post.querySelector(".delete-post-btn");
     if (deletePostBtn && author?.id === myId) {
         deletePostBtn.addEventListener("click", async () => {
-            await supabase.from("photos").delete().eq("id", photo.id);
+
+            const confirmed = confirm("Opravdu chceš smazat celý příspěvek?");
+            if (!confirmed) return;
+
+            await deleteEntirePost(first.post_id);
+
             post.remove();
         });
     }
 
+    // -----------------------------
+    // LIKES – navážeme na post_id
+    // -----------------------------
     const likeBtn = post.querySelector(".like-btn");
     const likeCount = post.querySelector(".like-count");
 
     const { data: likesData } = await supabase
         .from("likes")
         .select("*")
-        .eq("photo_id", photo.id);
+        .eq("post_id", first.post_id);
 
     const likes = likesData || [];
-    if (likeCount) likeCount.textContent = likes.length.toString();
+    likeCount.textContent = likes.length.toString();
 
     let alreadyLiked = likes.some(l => l.user_id === myId);
-    if (alreadyLiked && likeBtn) likeBtn.classList.add("liked");
+    if (alreadyLiked) likeBtn.classList.add("liked");
 
-    if (likeBtn && likeCount) {
-        likeBtn.addEventListener("click", async () => {
-            if (alreadyLiked) {
-                await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("user_id", myId)
-                    .eq("photo_id", photo.id);
+    likeBtn.addEventListener("click", async () => {
+        if (alreadyLiked) {
+            await supabase
+                .from("likes")
+                .delete()
+                .eq("user_id", myId)
+                .eq("post_id", first.post_id);
 
-                alreadyLiked = false;
-                likeBtn.classList.remove("liked");
-                likeCount.textContent = (Number(likeCount.textContent) - 1).toString();
-            } else {
-                await supabase
-                    .from("likes")
-                    .insert([{ user_id: myId, photo_id: photo.id }]);
+            alreadyLiked = false;
+            likeBtn.classList.remove("liked");
+            likeCount.textContent = (Number(likeCount.textContent) - 1).toString();
+        } else {
+            await supabase
+                .from("likes")
+                .insert([{ user_id: myId, post_id: first.post_id }]);
 
-                alreadyLiked = true;
-                likeBtn.classList.add("liked");
-                likeCount.textContent = (Number(likeCount.textContent) + 1).toString();
-            }
-        });
-    }
+            alreadyLiked = true;
+            likeBtn.classList.add("liked");
+            likeCount.textContent = (Number(likeCount.textContent) + 1).toString();
+        }
+    });
 
+    // -----------------------------
+    // COMMENTS – navážeme na post_id
+    // -----------------------------
     const commentToggleBtn = post.querySelector(".comment-toggle-btn");
     const commentsWrapper = post.querySelector(".comments");
     const commentList = post.querySelector(".comment-list");
     const commentCountEl = post.querySelector(".comment-count");
 
-    // FIX – načtení počtu komentářů před zobrazením postu
     const { count: rootCommentsCount } = await supabase
         .from("comments")
         .select("*", { count: "exact", head: true })
-        .eq("photo_id", photo.id)
+        .eq("post_id", first.post_id)
         .is("parent_id", null);
 
-    if (commentCountEl) {
-        commentCountEl.textContent = rootCommentsCount || 0;
-    }
+    commentCountEl.textContent = rootCommentsCount || 0;
 
-    if (commentToggleBtn && commentsWrapper) {
-        commentToggleBtn.addEventListener("click", async () => {
-            commentsWrapper.classList.toggle("hidden");
-            if (!commentsWrapper.classList.contains("hidden") && commentList) {
-                await loadCommentsForPhoto(photo.id, myId, commentList, commentCountEl, photo.user_id);
-            }
+    commentToggleBtn.addEventListener("click", async () => {
+        commentsWrapper.classList.toggle("hidden");
+        if (!commentsWrapper.classList.contains("hidden")) {
+            await loadCommentsForPost(first.post_id, myId, commentList, commentCountEl, first.user_id);
+        }
+    });
+
+    await attachNewCommentHandlerForPost(first.post_id, myId, commentsWrapper, first.user_id);
+
+    // -----------------------------
+    // CAROUSEL
+    // -----------------------------
+    if (photos.length > 1) {
+        let index = 0;
+        const track = post.querySelector(".carousel-track");
+        const prev = post.querySelector(".carousel-prev");
+        const next = post.querySelector(".carousel-next");
+
+        function update() {
+            track.style.transform = `translateX(-${index * 100}%)`;
+        }
+
+        prev.addEventListener("click", () => {
+            index = (index - 1 + photos.length) % photos.length;
+            update();
+        });
+
+        next.addEventListener("click", () => {
+            index = (index + 1) % photos.length;
+            update();
         });
     }
 
-    await attachNewCommentHandler(photo, myId, commentsWrapper, photo.user_id);
+    // -----------------------------
+    // MODAL – otevře všechny fotky
+    // -----------------------------
+    post.querySelectorAll(".post-image").forEach(img => {
+        img.addEventListener("click", () => openPostModal(photos));
+    });
 
-    if (feedEl) feedEl.appendChild(post);
+    feedEl.appendChild(post);
+}
+
+function openPostModal(photos) {
+    const modal = document.getElementById("postModal");
+    const track = modal.querySelector(".post-modal-track");
+    const closeBtn = document.getElementById("postModalClose");
+    const prevBtn = modal.querySelector(".post-modal-prev");
+    const nextBtn = modal.querySelector(".post-modal-next");
+
+    // vložíme všechny fotky
+    track.innerHTML = photos
+        .map(p => `<img class="post-modal-img" src="${p.url}">`)
+        .join("");
+
+    if (photos.length <= 1) {
+        prevBtn.style.display = "none";
+        nextBtn.style.display = "none";
+    } else {
+        prevBtn.style.display = "block";
+        nextBtn.style.display = "block";
+    }
+
+    let index = 0;
+
+    let startX = 0;
+    let endX = 0;
+
+    track.addEventListener("touchstart", (e) => {
+        startX = e.touches[0].clientX;
+    });
+
+    track.addEventListener("touchmove", (e) => {
+        endX = e.touches[0].clientX;
+    });
+
+    track.addEventListener("touchend", () => {
+        const diff = endX - startX;
+
+        if (Math.abs(diff) > 50) {
+            if (diff < 0) {
+                // swipe left → další fotka
+                index = (index + 1) % photos.length;
+            } else {
+                // swipe right → předchozí fotka
+                index = (index - 1 + photos.length) % photos.length;
+            }
+            update();
+        }
+
+        startX = 0;
+        endX = 0;
+    });
+
+    function update() {
+        track.style.transform = `translateX(-${index * 100}%)`;
+    }
+
+    prevBtn.onclick = () => {
+        index = (index - 1 + photos.length) % photos.length;
+        update();
+    };
+
+    nextBtn.onclick = () => {
+        index = (index + 1) % photos.length;
+        update();
+    };
+
+    closeBtn.onclick = () => modal.classList.add("hidden");
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.classList.add("hidden");
+    };
+
+    update();
+
+    modal.classList.remove("hidden");
+}
+
+async function loadCommentsForPost(postId, myId, commentList, commentCountEl, authorId) {
+    const { data: comments, error } = await supabase
+        .from("comments")
+        .select(`
+            id,
+            text,
+            user_id,
+            parent_id,
+            created_at,
+            profiles (
+                username,
+                avatar_url
+            )
+        `)
+        .eq("post_id", postId)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        console.error("Chyba při načítání komentářů:", error);
+        return;
+    }
+
+    commentList.innerHTML = "";
+
+    // seskupíme podle parent_id
+    const byParent = new Map();
+    comments.forEach(c => {
+        const key = c.parent_id || "root";
+        if (!byParent.has(key)) byParent.set(key, []);
+        byParent.get(key).push(c);
+    });
+
+    function renderComment(c, container) {
+        const div = document.createElement("div");
+        div.className = c.parent_id ? "reply" : "comment";
+
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px;">
+                <strong class="comment-author">${c.profiles?.username || "uživatel"}</strong>
+                <span class="comment-text">${c.text}</span>
+
+            ${(c.user_id === myId || authorId === myId)
+                ? `<button class="comment-delete" style="margin-left:auto;">×</button>`
+                : ""
+            }
+            </div>
+
+            ${!c.parent_id
+                ? `<button class="reply-btn">Odpovědět</button>`
+                : ""
+            }
+
+            ${!c.parent_id
+                ? `<div class="reply-list"></div>`
+                : ""
+            }
+            `;
+
+        container.appendChild(div);
+
+        const authorEl = div.querySelector(".comment-author");
+        if (authorEl) {
+            authorEl.addEventListener("click", () => {
+                loadOtherUser(c.user_id);
+            });
+        }
+
+        // DELETE
+        const del = div.querySelector(".comment-delete");
+        if (del) {
+            del.addEventListener("click", async () => {
+                const confirmed = confirm("Smazat komentář?");
+                if (!confirmed) return;
+
+                await supabase.from("comments").delete().eq("id", c.id);
+                await loadCommentsForPost(postId, myId, commentList, commentCountEl, authorId);
+            });
+        }
+
+        // REPLY
+        const replyBtn = div.querySelector(".reply-btn");
+        if (replyBtn) {
+            replyBtn.addEventListener("click", () => {
+                const input = container.closest(".comments").querySelector(".comment-input");
+                input.dataset.replyTo = c.id;
+                input.focus();
+            });
+        }
+
+        // CHILDREN
+        const children = byParent.get(c.id) || [];
+        if (children.length > 0) {
+            const replyList = div.querySelector(".reply-list");
+            children.forEach(child => renderComment(child, replyList));
+        }
+    }
+
+    // render root komentářů
+    const roots = byParent.get("root") || [];
+    roots.forEach(c => renderComment(c, commentList));
+
+    if (commentCountEl) {
+        commentCountEl.textContent = roots.length;
+    }
+}
+
+async function attachNewCommentHandlerForPost(postId, myId, commentsWrapper, authorId) {
+    const input = commentsWrapper.querySelector(".comment-input");
+    const list = commentsWrapper.querySelector(".comment-list");
+
+    if (!input) return;
+
+    input.addEventListener("keypress", async (e) => {
+        if (e.key !== "Enter") return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        const parentId = input.dataset.replyTo || null;
+
+        const { error } = await supabase
+            .from("comments")
+            .insert({
+                user_id: myId,
+                post_id: postId,
+                text,
+                parent_id: parentId
+            });
+
+        if (error) {
+            console.error("Chyba při ukládání komentáře:", error);
+            return;
+        }
+
+        input.value = "";
+        delete input.dataset.replyTo;
+
+        await loadCommentsForPost(postId, myId, list, null, authorId);
+    });
 }
 
 /* ---------------------------------------------------
   GALERIE
 --------------------------------------------------- */
-
 async function loadGallery(userId) {
-    const gallery = document.getElementById("tab-content-gallery");
-    if (!gallery) return;
+    const galleryWrapper = document.getElementById("tab-content-gallery");
+    if (!galleryWrapper) return;
 
-    gallery.innerHTML = "Načítám...";
+    const grid = galleryWrapper.querySelector(".gallery-grid");
+    if (!grid) return;
+
+    grid.innerHTML = "Načítám...";
 
     const { data: photos, error } = await supabase
         .from("photos")
@@ -544,16 +821,16 @@ async function loadGallery(userId) {
         .order("created_at", { ascending: false });
 
     if (error) {
-        gallery.innerHTML = "Chyba při načítání galerie.";
+        grid.innerHTML = "Chyba při načítání galerie.";
         return;
     }
 
     if (!photos || photos.length === 0) {
-        gallery.innerHTML = "<p>Žádné fotky.</p>";
+        grid.innerHTML = "<p>Žádné fotky.</p>";
         return;
     }
 
-    gallery.innerHTML = "";
+    grid.innerHTML = "";
 
     const { data: { user: me } } = await supabase.auth.getUser();
 
@@ -566,7 +843,7 @@ async function loadGallery(userId) {
             openPhotoModal(photo, me.id);
         });
 
-        gallery.appendChild(img);
+        grid.appendChild(img);
     });
 }
 
@@ -598,7 +875,6 @@ function openPhotoModal(photo, myId) {
 /* ---------------------------------------------------
    FEED FUNKCE
 --------------------------------------------------- */
-
 async function loadUserFeed(userId, targetId = "feed") {
     const feedEl = document.getElementById(targetId);
     if (!feedEl) return;
@@ -613,6 +889,7 @@ async function loadUserFeed(userId, targetId = "feed") {
 
     const myId = me.id;
 
+    // 1) načteme všechny fotky uživatele
     const { data: photos, error } = await supabase
         .from("photos")
         .select("*")
@@ -631,14 +908,23 @@ async function loadUserFeed(userId, targetId = "feed") {
         return;
     }
 
-    for (const photo of photos) {
+    // 2) seskupíme podle post_id
+    const grouped = new Map();
+    for (const p of photos) {
+        const key = p.post_id || p.id; // fallback pro staré fotky
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(p);
+    }
+
+    // 3) renderujeme posty
+    for (const [postId, postPhotos] of grouped) {
         const { data: author } = await supabase
             .from("profiles")
             .select("id, username, avatar_url")
-            .eq("id", photo.user_id)
+            .eq("id", postPhotos[0].user_id)
             .single();
 
-        await renderPost(photo, author, myId, feedEl);
+        await renderPostMulti(postPhotos, author, myId, feedEl);
     }
 }
 
@@ -656,6 +942,7 @@ async function loadCombinedFeed(targetId = "feed") {
 
     const myId = me.id;
 
+    // 1) zjistíme koho sleduju
     const { data: following } = await supabase
         .from("follows")
         .select("following_id")
@@ -669,6 +956,7 @@ async function loadCombinedFeed(targetId = "feed") {
         return;
     }
 
+    // 2) načteme všechny fotky
     const { data: photos, error } = await supabase
         .from("photos")
         .select("*")
@@ -687,14 +975,34 @@ async function loadCombinedFeed(targetId = "feed") {
         return;
     }
 
-    for (const photo of photos) {
+    // 3) seskupíme podle post_id
+    const grouped = new Map();
+    for (const p of photos) {
+        const key = p.post_id || p.id; // staré fotky mají post_id = id
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(p);
+    }
+
+    // 4) seřadíme celé posty podle času (nejnovější nahoře)
+    const sortedGroups = Array.from(grouped.entries()).sort((a, b) => {
+        const aTime = new Date(a[1][0].created_at);
+        const bTime = new Date(b[1][0].created_at);
+        return bTime - aTime; // nejnovější první
+    });
+
+    // 5) renderujeme posty
+    for (const [postId, postPhotos] of sortedGroups) {
+
+        // seřadíme fotky uvnitř postu (1 → 2 → 3)
+        postPhotos.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
         const { data: author } = await supabase
             .from("profiles")
             .select("id, username, avatar_url")
-            .eq("id", photo.user_id)
+            .eq("id", postPhotos[0].user_id)
             .single();
 
-        await renderPost(photo, author, myId, feedEl);
+        await renderPostMulti(postPhotos, author, myId, feedEl);
     }
 }
 
@@ -712,6 +1020,7 @@ async function loadFollowingFeed(targetId = "feed") {
 
     const myId = me.id;
 
+    // 1) koho sleduju
     const { data: following } = await supabase
         .from("follows")
         .select("following_id")
@@ -723,6 +1032,7 @@ async function loadFollowingFeed(targetId = "feed") {
         return;
     }
 
+    // 2) načteme fotky
     const { data: photos, error } = await supabase
         .from("photos")
         .select("*")
@@ -741,15 +1051,44 @@ async function loadFollowingFeed(targetId = "feed") {
         return;
     }
 
-    for (const photo of photos) {
+    // 3) seskupíme podle post_id
+    const grouped = new Map();
+    for (const p of photos) {
+        const key = p.post_id || p.id;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(p);
+    }
+
+    // 4) renderujeme posty
+    for (const [postId, postPhotos] of grouped) {
         const { data: author } = await supabase
             .from("profiles")
             .select("id, username, avatar_url")
-            .eq("id", photo.user_id)
+            .eq("id", postPhotos[0].user_id)
             .single();
 
-        await renderPost(photo, author, myId, feedEl);
+        await renderPostMulti(postPhotos, author, myId, feedEl);
     }
+}
+
+async function deleteEntirePost(postId) {
+    // 1) smažeme komentáře
+    await supabase
+        .from("comments")
+        .delete()
+        .eq("post_id", postId);
+
+    // 2) smažeme lajky
+    await supabase
+        .from("likes")
+        .delete()
+        .eq("post_id", postId);
+
+    // 3) smažeme všechny fotky z DB
+    await supabase
+        .from("photos")
+        .delete()
+        .eq("post_id", postId);
 }
 
 /* ---------------------------------------------------
@@ -899,7 +1238,6 @@ async function loadMyProfile() {
 /* ---------------------------------------------------
    CIZÍ PROFIL
 --------------------------------------------------- */
-
 async function loadOtherUser(userId) {
     const { data: profile, error } = await supabase
         .from("profiles")
@@ -1031,52 +1369,68 @@ async function loadOtherUser(userId) {
     await loadUserFeed(userId, "feed");
 }
 
-document.getElementById("uploadPhoto").addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+async function handlePhotoUploadMulti(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const fileName = `${user.id}_${Date.now()}`;
+    // 1) vytvoříme nový post_id
+    const postId = crypto.randomUUID();
 
-    const { data, error } = await supabase.storage
-        .from("user_photos")
-        .upload(fileName, file);
+    for (const file of files) {
+        const fileName = `${user.id}_${Date.now()}_${file.name}`;
 
-    if (error) {
-        console.error("Chyba při nahrávání fotky:", error);
-        alert("Nepodařilo se nahrát fotku.");
-        return;
+        // 2) nahrajeme fotku do storage
+        const { error: uploadError } = await supabase.storage
+            .from("user_photos")
+            .upload(fileName, file);
+
+        if (uploadError) {
+            console.error("Chyba při uploadu:", uploadError);
+            continue;
+        }
+
+        // 3) získáme public URL
+        const { data: urlData } = supabase.storage
+            .from("user_photos")
+            .getPublicUrl(fileName);
+
+        const url = urlData.publicUrl;
+
+        // 4) uložíme do DB
+        const { error: insertError } = await supabase
+            .from("photos")
+            .insert({
+                user_id: user.id,
+                url,
+                caption: "",
+                post_id: postId
+            });
+
+        if (insertError) {
+            console.error("Chyba při ukládání do DB:", insertError);
+        }
     }
 
-    const { data: urlData } = supabase.storage
-        .from("user_photos")
-        .getPublicUrl(fileName);
+    // 5) vyčistíme input
+    event.target.value = "";
 
-    const photoUrl = urlData.publicUrl;
-
-    const { error: dbError } = await supabase
-        .from("photos")
-        .insert({
-            user_id: user.id,
-            url: photoUrl
-        });
-
-    if (dbError) {
-        console.error("Chyba při ukládání do DB:", dbError);
-        alert("Fotka se nahrála, ale nepodařilo se uložit do databáze.");
-        return;
-    }
-
+    // 6) refresh galerie
     await loadGallery(user.id);
-});
 
+    // 7) refresh feedu
+    if (typeof loadCombinedFeed === "function") {
+        await loadCombinedFeed();
+        await loadGallery(user.id);
+        await loadCombinedFeed("feed");
+    }
+}
 
 /* ---------------------------------------------------
    FOLLOW MODAL
 --------------------------------------------------- */
-
 async function openFollowModal(title, userId, type) {
     const modal = $("#followModal");
     const modalTitle = $("#modalTitle");
