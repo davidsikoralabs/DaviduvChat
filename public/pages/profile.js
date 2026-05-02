@@ -918,39 +918,55 @@ async function loadUserFeed(userId, targetId = "feed") {
 
     const myId = me.id;
 
-    const { data: photos, error } = await supabase
+    // 1) Načíst textové posty
+    const { data: posts } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    const postIds = posts.map(p => p.id);
+
+    // 2) Načíst VŠECHNY fotky uživatele
+    const { data: allPhotos } = await supabase
         .from("photos")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-    if (error) {
-        console.error("Chyba při načítání feedu:", error);
-        feedEl.innerHTML = "Chyba při načítání feedu.";
-        return;
-    }
+    // 3) Seskupit fotky podle post_id nebo id
+    const photosByPost = new Map();
+    allPhotos.forEach(ph => {
+        const key = ph.post_id || ph.id;
+        if (!photosByPost.has(key)) photosByPost.set(key, []);
+        photosByPost.get(key).push(ph);
+    });
+
+    // 4) Načíst autora
+    const { data: author } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", userId)
+        .single();
 
     feedEl.innerHTML = "";
-    if (!photos || photos.length === 0) {
-        feedEl.innerHTML = "<p>Žádné příspěvky.</p>";
-        return;
+
+    // 5) Vyrenderovat textové posty (s fotkami i bez)
+    for (const post of posts) {
+        const postPhotos = photosByPost.get(post.id) || [];
+        await renderPostMulti(postPhotos, author, myId, feedEl, post);
     }
 
-    const grouped = new Map();
-    for (const p of photos) {
-        const key = p.post_id || p.id; // fallback pro staré fotky
-        if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key).push(p);
-    }
-
-    for (const [postId, postPhotos] of grouped) {
-        const { data: author } = await supabase
-            .from("profiles")
-            .select("id, username, avatar_url")
-            .eq("id", postPhotos[0].user_id)
-            .single();
-
-        await renderPostMulti(postPhotos, author, myId, feedEl);
+    // 6) Vyrenderovat orphan fotky i fotky s neexistujícím postem
+    for (const photo of allPhotos) {
+        if (!postIds.includes(photo.post_id)) {
+            await renderPostMulti([photo], author, myId, feedEl, {
+                id: photo.id,
+                user_id: photo.user_id,
+                text: null,
+                created_at: photo.created_at
+            });
+        }
     }
 }
 
@@ -1753,62 +1769,6 @@ function escapeHtml(str = "") {
     window.addEventListener("resize", applyWidth);
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
-    (async function initCreateBoxVisibility() {
-        try {
-            const createBox = document.querySelector(".create-post-box");
-            if (!createBox) return;
-
-            function getProfileUserIdFromUrl() {
-                const params = new URLSearchParams(window.location.search);
-                return params.get("user");
-            }
-
-            let myId = null;
-            try {
-                const { data: authData } = await supabase.auth.getUser();
-                myId = authData?.user?.id || null;
-            } catch (e) {
-                console.warn("Nelze získat přihlášeného uživatele:", e);
-            }
-
-            function isOwnProfile() {
-                const profileUserId = getProfileUserIdFromUrl();
-                if (!profileUserId) return true;
-                if (!myId) return false;
-                return profileUserId === myId;
-            }
-
-            function applyVisibility() {
-                if (isOwnProfile()) createBox.classList.remove("hidden");
-                else createBox.classList.add("hidden");
-                window.currentProfileIsOwn = isOwnProfile();
-            }
-
-            applyVisibility();
-
-            (function watchUrlChanges() {
-                const origPush = history.pushState;
-                history.pushState = function () {
-                    origPush.apply(this, arguments);
-                    setTimeout(applyVisibility, 20);
-                };
-                const origReplace = history.replaceState;
-                history.replaceState = function () {
-                    origReplace.apply(this, arguments);
-                    setTimeout(applyVisibility, 20);
-                };
-                window.addEventListener("popstate", () => setTimeout(applyVisibility, 20));
-            })();
-
-            window.applyCreateBoxVisibility = applyVisibility;
-        } catch (err) {
-            console.error("Init create-post visibility error:", err);
-        }
-    })();
-});
-
-
 /* ---------------------------------------------------
    INIT PROFILU + TABY
 --------------------------------------------------- */
@@ -1885,6 +1845,11 @@ async function initProfile() {
     } else {
         await loadMyProfile();
     }
+
+    window.currentProfileIsOwn = !userParam;
+
+    const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab || "feed";
+    updateProfileUI({ isOwnProfile: window.currentProfileIsOwn, activeTab });
 }
 
 /* ---------------------------------------------------
