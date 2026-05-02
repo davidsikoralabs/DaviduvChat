@@ -546,6 +546,7 @@ button:hover {
 }
 
 .upload-btn {
+    position: absolute;
     display: inline-block;
     background-color: #6a4df4;
     color: white;
@@ -825,7 +826,7 @@ button:hover {
 
 
 #feed {
-    max-width: 900px;
+    max-width: 450px;
     margin: 0 auto;
 }
 
@@ -860,7 +861,8 @@ button:hover {
 }
 
 #tab-content-gallery .gallery-grid {
-    max-width: 900px;   
+    margin-top: 50px;
+    max-width: 300px;   
     width: 50dvh;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -894,10 +896,105 @@ button:hover {
 .post {
     max-width: 900px;
     margin: 2px auto;
-    background: #fff;
-    border: 10px solid #ddd;
+    border: 2px solid #ddd;
     border-radius: 12px;
     overflow: hidden;
+}
+
+.create-post-box {
+    background: #fff;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#create-post-box textarea {
+    width: 100%;
+    border: none;
+    resize: none;
+    font-size: 15px;
+}
+
+.create-post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.publish-btn {
+    background: #6c47ff;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.post-photo-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 6px;
+}
+
+.create-post-box.hidden {
+  display: none !important;
+}
+
+/* --- Kontejner a šířka vstupu --- */
+.create-post-box,
+.post-input-wrapper,
+.post-form {
+  max-width: 720px; 
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+.feed-list .post {
+  width: 100%;
+  max-width: 720px; 
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  min-height: 140px;        
+  padding: 16px 18px;       
+  border-radius: 10px;
+  display: block;
+  overflow: hidden;
+}
+
+.post .post-username,
+.post .post-time {
+  color: #010101; 
+  font-weight: 600;
+}
+
+.post .post-text,
+.post .post-caption {
+  color: #000000; 
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.post .post-carousel,
+.post .post-image {
+  width: 100%;
+  min-height: 220px;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+.post .post-actions {
+  margin-top: 10px;
+  color: #cbd6ee;
 }
 
 /* Obrázek */

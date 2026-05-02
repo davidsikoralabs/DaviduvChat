@@ -1,4 +1,5 @@
 import { supabase } from "/supabase.js";
+window.supabase = supabase;
 
 /* ---------------------------------------------------
    POMOCNÉ FUNKCE
@@ -17,10 +18,16 @@ function $(sel) {
     return document.querySelector(sel);
 }
 
-// Multi-upload listener
 const uploadInput = document.getElementById("uploadPhoto");
 if (uploadInput) {
     uploadInput.addEventListener("change", handlePhotoUploadMulti);
+}
+
+function updateProfileUI({ isOwnProfile = false, activeTab = null } = {}) {
+    const createBox = document.querySelector(".create-post-box");
+    const uploadBtn = document.querySelector(".upload-btn");
+    if (createBox) createBox.style.display = isOwnProfile ? "" : "none";
+    if (uploadBtn) uploadBtn.style.display = (activeTab === "gallery") ? "" : "none";
 }
 
 /* ---------------------------------------------------
@@ -47,8 +54,6 @@ function renderProfile({ email, created_at, username, bio, avatar_url }) {
 /* ---------------------------------------------------
    KOMENTÁŘE + ODPOVĚDI
 --------------------------------------------------- */
-
-// načtení komentářů + odpovědí pro jeden post
 async function loadCommentsForPhoto(photoId, myId, commentList, commentCountEl, photoOwnerId) {
     if (!commentList) return;
 
@@ -417,54 +422,71 @@ async function attachNewCommentHandler(photo, myId, commentsWrapper, photoOwnerI
 /* ---------------------------------------------------
    RENDER POSTU (JEDNOTNÝ PRO VŠECHNY FEEDY)
 --------------------------------------------------- */
-async function renderPostMulti(photos, author, myId, feedEl) {
-    const post = document.createElement("div");
-    post.className = "post";
+async function renderPostMulti(photos, author, myId, feedEl, post = null) {
+    const postEl = document.createElement("div");
+    postEl.className = "post";
 
-    const first = photos[0]; // první fotka = hlavní metadata
+    const hasPhotos = Array.isArray(photos) && photos.length > 0;
+    const first = hasPhotos ? photos[0] : null;
 
-    post.innerHTML = `
-        <div class="post-header">
-            <img class="post-avatar" src="${author?.avatar_url || "/assets/default-avatar.png"}">
-            <div>
-                <div class="post-username" data-user="${author?.id || ""}">
-                    ${author?.username || "uživatel"}
-                </div>
-                <div class="post-time">${new Date(first.created_at).toLocaleString()}</div>
-            </div>
-            ${author?.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
+    const postId = (first && (first.post_id || first.id)) || (post && post.id) || "";
+    const createdAt = (first && first.created_at) || (post && post.created_at) || "";
+    const postUserId = (first && first.user_id) || (post && post.user_id) || (author && author.id) || "";
+
+    postEl.dataset.postId = postId;
+
+    postEl.innerHTML = `
+    <div class="post-header">
+      <img class="post-avatar" src="${escapeHtml(author?.avatar_url || "/assets/default-avatar.png")}" />
+      <div>
+        <div class="post-username" data-user="${escapeHtml(author?.id || "")}">
+          ${escapeHtml(author?.username || "uživatel")}
         </div>
+        <div class="post-time">${createdAt ? escapeHtml(new Date(createdAt).toLocaleString()) : ""}</div>
+      </div>
+      ${author?.id === myId ? `<button class="delete-post-btn">🗑️</button>` : ""}
+    </div>
+  `;
 
-        <div class="post-carousel">
-            <div class="carousel-track">
-                ${photos.map(p => `<img class="post-image" src="${p.url}">`).join("")}
-            </div>
+    const textHtml = post && post.text ? `<div class="post-text">${escapeHtml(post.text)}</div>` : (first && first.caption ? `<div class="post-caption">${escapeHtml(first.caption)}</div>` : "");
 
-            ${photos.length > 1 ? `
-                <button class="carousel-prev">‹</button>
-                <button class="carousel-next">›</button>
-            ` : ""}
+    if (hasPhotos) {
+        const imagesHtml = photos.map(p => `<img class="post-image" src="${escapeHtml(p.url)}" data-photo-id="${escapeHtml(p.id || "")}">`).join("");
+        postEl.innerHTML += `
+      <div class="post-carousel">
+        <div class="carousel-track">
+          ${imagesHtml}
         </div>
-
-        ${first.caption ? `<div class="post-caption">${first.caption}</div>` : ""}
-
-        <div class="post-actions">
-            <button class="like-btn">❤️</button>
-            <span class="like-count">0</span>
-            <button class="comment-toggle-btn">💬</button>
-            <span class="comment-count">0</span>
-        </div>
-
-        <div class="comments hidden">
-            <div class="comment-list"></div>
-            <input class="comment-input" placeholder="Napiš komentář...">
-        </div>
+        ${photos.length > 1 ? `<button class="carousel-prev">‹</button><button class="carousel-next">›</button>` : ""}
+      </div>
+      ${textHtml}
     `;
+    } else {
+
+        postEl.innerHTML += `
+      ${textHtml}
+    `;
+    }
+
+    // actions + comments wrapper
+    postEl.innerHTML += `
+    <div class="post-actions">
+      <button class="like-btn">❤️</button>
+      <span class="like-count">0</span>
+      <button class="comment-toggle-btn">💬</button>
+      <span class="comment-count">0</span>
+    </div>
+
+    <div class="comments hidden">
+      <div class="comment-list"></div>
+      <input class="comment-input" placeholder="Napiš komentář...">
+    </div>
+  `;
 
     // -----------------------------
     // Username click
     // -----------------------------
-    const usernameEl = post.querySelector(".post-username");
+    const usernameEl = postEl.querySelector(".post-username");
     if (usernameEl && author?.id) {
         usernameEl.addEventListener("click", () => {
             window.location.href = `profile.html?user=${author.id}`;
@@ -472,93 +494,98 @@ async function renderPostMulti(photos, author, myId, feedEl) {
     }
 
     // -----------------------------
-    // DELETE POST (smaže všechny fotky se stejným post_id)
+    // DELETE POST
     // -----------------------------
-    const deletePostBtn = post.querySelector(".delete-post-btn");
+    const deletePostBtn = postEl.querySelector(".delete-post-btn");
     if (deletePostBtn && author?.id === myId) {
         deletePostBtn.addEventListener("click", async () => {
-
             const confirmed = confirm("Opravdu chceš smazat celý příspěvek?");
             if (!confirmed) return;
-
-            await deleteEntirePost(first.post_id);
-
-            post.remove();
+            await deleteEntirePost(postId);
+            postEl.remove();
         });
     }
 
     // -----------------------------
-    // LIKES – navážeme na post_id
+    // LIKES
     // -----------------------------
-    const likeBtn = post.querySelector(".like-btn");
-    const likeCount = post.querySelector(".like-count");
+    const likeBtn = postEl.querySelector(".like-btn");
+    const likeCount = postEl.querySelector(".like-count");
 
-    const { data: likesData } = await supabase
-        .from("likes")
-        .select("*")
-        .eq("post_id", first.post_id);
+    try {
+        const { data: likesData } = await supabase
+            .from("likes")
+            .select("*")
+            .eq("post_id", postId);
 
-    const likes = likesData || [];
-    likeCount.textContent = likes.length.toString();
+        const likes = likesData || [];
+        likeCount.textContent = likes.length.toString();
 
-    let alreadyLiked = likes.some(l => l.user_id === myId);
-    if (alreadyLiked) likeBtn.classList.add("liked");
+        let alreadyLiked = likes.some(l => l.user_id === myId);
+        if (alreadyLiked) likeBtn.classList.add("liked");
 
-    likeBtn.addEventListener("click", async () => {
-        if (alreadyLiked) {
-            await supabase
-                .from("likes")
-                .delete()
-                .eq("user_id", myId)
-                .eq("post_id", first.post_id);
+        likeBtn.addEventListener("click", async () => {
+            if (alreadyLiked) {
+                await supabase
+                    .from("likes")
+                    .delete()
+                    .eq("user_id", myId)
+                    .eq("post_id", postId);
 
-            alreadyLiked = false;
-            likeBtn.classList.remove("liked");
-            likeCount.textContent = (Number(likeCount.textContent) - 1).toString();
-        } else {
-            await supabase
-                .from("likes")
-                .insert([{ user_id: myId, post_id: first.post_id }]);
+                alreadyLiked = false;
+                likeBtn.classList.remove("liked");
+                likeCount.textContent = (Number(likeCount.textContent) - 1).toString();
+            } else {
+                await supabase
+                    .from("likes")
+                    .insert([{ user_id: myId, post_id: postId }]);
 
-            alreadyLiked = true;
-            likeBtn.classList.add("liked");
-            likeCount.textContent = (Number(likeCount.textContent) + 1).toString();
-        }
-    });
+                alreadyLiked = true;
+                likeBtn.classList.add("liked");
+                likeCount.textContent = (Number(likeCount.textContent) + 1).toString();
+            }
+        });
+    } catch (e) {
+        console.error("Likes load error:", e);
+    }
 
     // -----------------------------
-    // COMMENTS – navážeme na post_id
+    // COMMENTS
     // -----------------------------
-    const commentToggleBtn = post.querySelector(".comment-toggle-btn");
-    const commentsWrapper = post.querySelector(".comments");
-    const commentList = post.querySelector(".comment-list");
-    const commentCountEl = post.querySelector(".comment-count");
+    const commentToggleBtn = postEl.querySelector(".comment-toggle-btn");
+    const commentsWrapper = postEl.querySelector(".comments");
+    const commentList = postEl.querySelector(".comment-list");
+    const commentCountEl = postEl.querySelector(".comment-count");
 
-    const { count: rootCommentsCount } = await supabase
-        .from("comments")
-        .select("*", { count: "exact", head: true })
-        .eq("post_id", first.post_id)
-        .is("parent_id", null);
+    try {
+        const { count: rootCommentsCount } = await supabase
+            .from("comments")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", postId)
+            .is("parent_id", null);
 
-    commentCountEl.textContent = rootCommentsCount || 0;
+        commentCountEl.textContent = rootCommentsCount || 0;
+    } catch (e) {
+        console.error("Comments count error:", e);
+    }
 
     commentToggleBtn.addEventListener("click", async () => {
         commentsWrapper.classList.toggle("hidden");
         if (!commentsWrapper.classList.contains("hidden")) {
-            await loadCommentsForPost(first.post_id, myId, commentList, commentCountEl, first.user_id);
+            await loadCommentsForPost(postId, myId, commentList, commentCountEl, postUserId);
         }
     });
 
-    await attachNewCommentHandlerForPost(first.post_id, myId, commentsWrapper, first.user_id);
+    await attachNewCommentHandlerForPost(postId, myId, commentsWrapper, postUserId);
 
     // -----------------------------
     // CAROUSEL
     // -----------------------------
-    if (photos.length > 1) {
+    if (hasPhotos && photos.length > 1) {
         let index = 0;
-        const track = post.querySelector(".carousel-track");
-        const prev = post.querySelector(".carousel-prev");
-        const next = post.querySelector(".carousel-next");
+        const track = postEl.querySelector(".carousel-track");
+        const prev = postEl.querySelector(".carousel-prev");
+        const next = postEl.querySelector(".carousel-next");
 
         function update() {
             track.style.transform = `translateX(-${index * 100}%)`;
@@ -576,13 +603,15 @@ async function renderPostMulti(photos, author, myId, feedEl) {
     }
 
     // -----------------------------
-    // MODAL – otevře všechny fotky
+    // MODAL 
     // -----------------------------
-    post.querySelectorAll(".post-image").forEach(img => {
-        img.addEventListener("click", () => openPostModal(photos));
-    });
+    if (hasPhotos) {
+        postEl.querySelectorAll(".post-image").forEach(img => {
+            img.addEventListener("click", () => openPostModal(photos));
+        });
+    }
 
-    feedEl.appendChild(post);
+    feedEl.appendChild(postEl);
 }
 
 function openPostModal(photos) {
@@ -889,7 +918,6 @@ async function loadUserFeed(userId, targetId = "feed") {
 
     const myId = me.id;
 
-    // 1) načteme všechny fotky uživatele
     const { data: photos, error } = await supabase
         .from("photos")
         .select("*")
@@ -908,7 +936,6 @@ async function loadUserFeed(userId, targetId = "feed") {
         return;
     }
 
-    // 2) seskupíme podle post_id
     const grouped = new Map();
     for (const p of photos) {
         const key = p.post_id || p.id; // fallback pro staré fotky
@@ -916,7 +943,6 @@ async function loadUserFeed(userId, targetId = "feed") {
         grouped.get(key).push(p);
     }
 
-    // 3) renderujeme posty
     for (const [postId, postPhotos] of grouped) {
         const { data: author } = await supabase
             .from("profiles")
@@ -931,7 +957,6 @@ async function loadUserFeed(userId, targetId = "feed") {
 async function loadCombinedFeed(targetId = "feed") {
     const feedEl = document.getElementById(targetId);
     if (!feedEl) return;
-
     feedEl.innerHTML = "Načítám...";
 
     const { data: { user: me } } = await supabase.auth.getUser();
@@ -939,10 +964,8 @@ async function loadCombinedFeed(targetId = "feed") {
         goTo("/login.html");
         return;
     }
-
     const myId = me.id;
 
-    // 1) zjistíme koho sleduju
     const { data: following } = await supabase
         .from("follows")
         .select("following_id")
@@ -956,53 +979,58 @@ async function loadCombinedFeed(targetId = "feed") {
         return;
     }
 
-    // 2) načteme všechny fotky
-    const { data: photos, error } = await supabase
-        .from("photos")
-        .select("*")
+    const { data: posts, error: postsError } = await supabase
+        .from("posts")
+        .select("id, user_id, text, created_at")
         .in("user_id", ids)
         .order("created_at", { ascending: false });
 
-    if (error) {
-        console.error("Chyba při načítání combined feedu:", error);
+    if (postsError) {
+        console.error("Chyba při načítání postů:", postsError);
         feedEl.innerHTML = "Chyba při načítání feedu.";
         return;
     }
 
-    feedEl.innerHTML = "";
-    if (!photos || photos.length === 0) {
+    if (!posts || posts.length === 0) {
         feedEl.innerHTML = "<p>Žádné příspěvky.</p>";
         return;
     }
 
-    // 3) seskupíme podle post_id
-    const grouped = new Map();
-    for (const p of photos) {
-        const key = p.post_id || p.id; // staré fotky mají post_id = id
-        if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key).push(p);
+    const postIds = posts.map(p => p.id);
+    const { data: photos, error: photosError } = await supabase
+        .from("photos")
+        .select("*")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: false });
+
+    if (photosError) {
+        console.error("Chyba při načítání fotek:", photosError);
     }
 
-    // 4) seřadíme celé posty podle času (nejnovější nahoře)
-    const sortedGroups = Array.from(grouped.entries()).sort((a, b) => {
-        const aTime = new Date(a[1][0].created_at);
-        const bTime = new Date(b[1][0].created_at);
-        return bTime - aTime; // nejnovější první
+    const photosByPost = new Map();
+    (photos || []).forEach(ph => {
+        const key = ph.post_id || ph.id;
+        if (!photosByPost.has(key)) photosByPost.set(key, []);
+        photosByPost.get(key).push(ph);
     });
 
-    // 5) renderujeme posty
-    for (const [postId, postPhotos] of sortedGroups) {
+    posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        // seřadíme fotky uvnitř postu (1 → 2 → 3)
-        postPhotos.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    feedEl.innerHTML = "";
+    // batch načtení autorů pro výkon
+    const userIds = [...new Set(posts.map(p => p.user_id))];
+    const { data: authors } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .in("id", userIds);
 
-        const { data: author } = await supabase
-            .from("profiles")
-            .select("id, username, avatar_url")
-            .eq("id", postPhotos[0].user_id)
-            .single();
+    const authorsById = new Map((authors || []).map(a => [a.id, a]));
 
-        await renderPostMulti(postPhotos, author, myId, feedEl);
+    for (const post of posts) {
+        const postPhotos = photosByPost.get(post.id) || [];
+        const author = authorsById.get(post.user_id) || { id: post.user_id };
+        // zavoláme render jen jednou pro každý post
+        await renderPostMulti(postPhotos, author, myId, feedEl, post);
     }
 }
 
@@ -1376,13 +1404,11 @@ async function handlePhotoUploadMulti(event) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 1) vytvoříme nový post_id
     const postId = crypto.randomUUID();
 
     for (const file of files) {
         const fileName = `${user.id}_${Date.now()}_${file.name}`;
 
-        // 2) nahrajeme fotku do storage
         const { error: uploadError } = await supabase.storage
             .from("user_photos")
             .upload(fileName, file);
@@ -1392,14 +1418,11 @@ async function handlePhotoUploadMulti(event) {
             continue;
         }
 
-        // 3) získáme public URL
         const { data: urlData } = supabase.storage
             .from("user_photos")
             .getPublicUrl(fileName);
 
         const url = urlData.publicUrl;
-
-        // 4) uložíme do DB
         const { error: insertError } = await supabase
             .from("photos")
             .insert({
@@ -1414,16 +1437,12 @@ async function handlePhotoUploadMulti(event) {
         }
     }
 
-    // 5) vyčistíme input
     event.target.value = "";
 
-    // 6) refresh galerie
     await loadGallery(user.id);
 
-    // 7) refresh feedu
+    await loadGallery(user.id);
     if (typeof loadCombinedFeed === "function") {
-        await loadCombinedFeed();
-        await loadGallery(user.id);
         await loadCombinedFeed("feed");
     }
 }
@@ -1503,12 +1522,307 @@ async function openFollowModal(title, userId, type) {
     };
 }
 
+/* ---------------- Create Post: upload + publish ---------------- */
+
+function initCreatePost() {
+    const addBtn = document.getElementById("addPostPhotoBtn");
+    const fileInput = document.getElementById("postPhotoInput");
+    const publishBtn = document.getElementById("publishPostBtn");
+    const textArea = document.getElementById("postText");
+    const preview = document.getElementById("postPhotoPreview");
+
+    if (!addBtn || !fileInput || !publishBtn || !textArea || !preview) return;
+
+    addBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", () => {
+        renderPostPreview(fileInput.files, preview);
+    });
+
+    publishBtn.addEventListener("click", async () => {
+        await publishPostHandler(textArea, fileInput, preview, publishBtn);
+    });
+}
+
+function renderPostPreview(fileList, previewEl) {
+    previewEl.innerHTML = "";
+    if (!fileList || fileList.length === 0) return;
+    Array.from(fileList).slice(0, 6).forEach(file => {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.style.width = "80px";
+        img.style.height = "80px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "8px";
+        img.style.marginRight = "6px";
+        previewEl.appendChild(img);
+    });
+}
+
+async function publishPostHandler(textArea, fileInput, previewEl, publishBtn) {
+    if (publishBtn.dataset.processing === "1") {
+        console.log("publishPostHandler: už probíhá publikování, přeskočeno");
+        return;
+    }
+    publishBtn.dataset.processing = "1";
+    const text = textArea.value.trim();
+    const files = fileInput.files ? Array.from(fileInput.files) : [];
+    publishBtn.disabled = true;
+    publishBtn.textContent = "Publikuji…";
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Nejste přihlášen.");
+
+        const postId = crypto.randomUUID();
+
+        const uploadedPhotos = [];
+        for (const file of files) {
+            try {
+                const fileName = `${user.id}_${Date.now()}_${file.name}`;
+                const { error: uploadError } = await supabase.storage
+                    .from("user_photos")
+                    .upload(fileName, file);
+
+                if (uploadError) {
+                    console.error("Upload error:", uploadError);
+                    continue;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from("user_photos")
+                    .getPublicUrl(fileName);
+
+                const url = urlData?.publicUrl || "";
+
+                const { error: insertError } = await supabase
+                    .from("photos")
+                    .insert({
+                        user_id: user.id,
+                        url,
+                        caption: "",
+                        post_id: postId
+                    });
+
+                if (insertError) {
+                    console.error("DB insert photo error:", insertError);
+                } else {
+                    uploadedPhotos.push({ id: null, url, user_id: user.id, post_id: postId, created_at: new Date().toISOString() });
+                }
+            } catch (e) {
+                console.error("Photo upload loop error:", e);
+            }
+        }
+
+        const { data: postData, error: postError } = await supabase
+            .from("posts")
+            .insert({
+                id: postId,
+                user_id: user.id,
+                text
+            })
+            .select("id, user_id, text, created_at")
+            .single();
+
+        if (postError) {
+            console.error("Chyba při vytváření postu:", postError);
+            throw new Error("Chyba při ukládání příspěvku.");
+        }
+
+        const { data: photosForPost, error: photosError } = await supabase
+            .from("photos")
+            .select("id, url")
+            .eq("post_id", postId);
+
+        const newPost = {
+            ...postData,
+            photos: photosForPost || []
+        };
+
+        console.log("Post vytvořen:", newPost);
+
+        textArea.value = "";
+        fileInput.value = "";
+        previewEl.innerHTML = "";
+
+        if (typeof loadCombinedFeed === "function") {
+            await loadCombinedFeed("feed");
+        } else if (typeof loadUserFeed === "function") {
+            const userParam = getQueryParam("user");
+            if (userParam) await loadUserFeed(userParam, "feed");
+            else {
+                const { data: { user: me } } = await supabase.auth.getUser();
+                if (me) await loadUserFeed(me.id, "feed");
+            }
+        } else {
+            appendPostToFeed(newPost);
+        }
+
+        const { data: { user: me } } = await supabase.auth.getUser();
+        if (me) await loadGallery(me.id);
+
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Chyba při publikování příspěvku.");
+    } finally {
+        publishBtn.disabled = false;
+        publishBtn.textContent = "Publikovat";
+    }
+
+    publishBtn.dataset.processing = "0";
+}
+
+/* ---------------- pomocné funkce pro zobrazení ---------------- */
+
+function appendPostToFeed(post) {
+    const feedEl = document.getElementById("feed");
+    if (!feedEl) return;
+
+    if (post && post.id) {
+        const existing = feedEl.querySelector(`[data-post-id="${post.id}"]`);
+        if (existing) {
+            console.log("appendPostToFeed: post již existuje v DOM, přeskočeno:", post.id);
+            return;
+        }
+    }
+
+    const div = document.createElement("div");
+    div.className = "post";
+    div.dataset.postId = post.id;
+
+    const created = post.created_at ? new Date(post.created_at).toLocaleString() : "";
+    const photosHtml = (post.photos && post.photos.length)
+        ? `<div class="post-photos">${post.photos.map(p => `<img src="${escapeHtml(p.url)}" class="post-photo-thumb">`).join("")}</div>`
+        : "";
+
+    div.innerHTML = `
+    <div class="post-meta">Uživatel: <strong>${escapeHtml(post.user_id)}</strong> • ${escapeHtml(created)}</div>
+    <div class="post-text">${escapeHtml(post.text || "")}</div>
+    ${photosHtml}
+    <div class="post-actions">
+      <button class="like-btn">👍 <span>0</span></button>
+      <button class="dislike-btn">👎 <span>0</span></button>
+      <button class="comment-btn">💬</button>
+    </div>
+  `;
+
+    feedEl.prepend(div);
+}
+
+async function fetchAndRenderLatestPosts() {
+    const { data: posts, error } = await supabase
+        .from("posts")
+        .select("id, user_id, text, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+    if (error) {
+        console.error("Chyba při načítání postů:", error);
+        return;
+    }
+
+    const feedEl = document.getElementById("feed");
+    if (!feedEl) return;
+    feedEl.innerHTML = "";
+    for (const p of posts) {
+        // načti fotky pro každý post (jednoduchý způsob)
+        const { data: photos } = await supabase.from("photos").select("id, url").eq("post_id", p.id);
+        p.photos = photos || [];
+        appendPostToFeed(p);
+    }
+}
+
+function escapeHtml(str = "") {
+    return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+}
+
+(function syncPostWidthWithInput() {
+    const input = document.querySelector(".create-post-box textarea#postText, .create-post-box input#postText");
+    if (!input) return;
+
+    function applyWidth() {
+        const w = input.getBoundingClientRect().width;
+        document.querySelectorAll(".feed-list .post").forEach(p => {
+            p.style.maxWidth = `${Math.round(w)}px`;
+            p.style.marginLeft = "auto";
+            p.style.marginRight = "auto";
+        });
+    }
+
+    applyWidth();
+    window.addEventListener("resize", applyWidth);
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+    (async function initCreateBoxVisibility() {
+        try {
+            const createBox = document.querySelector(".create-post-box");
+            if (!createBox) return;
+
+            function getProfileUserIdFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get("user");
+            }
+
+            let myId = null;
+            try {
+                const { data: authData } = await supabase.auth.getUser();
+                myId = authData?.user?.id || null;
+            } catch (e) {
+                console.warn("Nelze získat přihlášeného uživatele:", e);
+            }
+
+            function isOwnProfile() {
+                const profileUserId = getProfileUserIdFromUrl();
+                if (!profileUserId) return true;
+                if (!myId) return false;
+                return profileUserId === myId;
+            }
+
+            function applyVisibility() {
+                if (isOwnProfile()) createBox.classList.remove("hidden");
+                else createBox.classList.add("hidden");
+                window.currentProfileIsOwn = isOwnProfile();
+            }
+
+            applyVisibility();
+
+            (function watchUrlChanges() {
+                const origPush = history.pushState;
+                history.pushState = function () {
+                    origPush.apply(this, arguments);
+                    setTimeout(applyVisibility, 20);
+                };
+                const origReplace = history.replaceState;
+                history.replaceState = function () {
+                    origReplace.apply(this, arguments);
+                    setTimeout(applyVisibility, 20);
+                };
+                window.addEventListener("popstate", () => setTimeout(applyVisibility, 20));
+            })();
+
+            window.applyCreateBoxVisibility = applyVisibility;
+        } catch (err) {
+            console.error("Init create-post visibility error:", err);
+        }
+    })();
+});
+
+
 /* ---------------------------------------------------
    INIT PROFILU + TABY
 --------------------------------------------------- */
 
 function initTabs() {
     const tabButtons = document.querySelectorAll(".tab-btn");
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const activeTab = e.currentTarget.dataset.tab;
+            const isOwn = window.currentProfileIsOwn === true;
+            updateProfileUI({ isOwnProfile: isOwn, activeTab });
+        });
+    });
+
     const feedTab = $("#tab-content-feed");
     const galleryTab = $("#tab-content-gallery");
     const marketTab = $("#tab-content-market");
@@ -1562,6 +1876,7 @@ function initTabs() {
 
 async function initProfile() {
     initTabs();
+    initCreatePost();
 
     const userParam = getQueryParam("user");
 

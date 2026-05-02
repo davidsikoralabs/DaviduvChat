@@ -94,15 +94,28 @@
 
         <div id="tab-content-feed">
             <div class="feed-section">
+
+                <div class="create-post-box">
+                    <textarea id="postText" placeholder="Napiš něco..."></textarea>
+
+                    <div class="create-post-actions">
+                        <button id="addPostPhotoBtn">📷</button>
+                        <input type="file" id="postPhotoInput" accept="image/*" multiple style="display:none;">
+                        <button id="publishPostBtn" class="publish-btn">Publikovat</button>
+                    </div>
+
+                    <div id="postPhotoPreview" class="post-photo-preview"></div>
+                </div>
+
                 <div id="feed" class="feed-list"></div>
+
             </div>
         </div>
 
-        <input type="file" id="uploadPhoto" accept="image/*" multiple style="display:none;">
-        <label for="uploadPhoto" class="upload-btn">Nahrát fotky</label>
-
         <div id="tab-content-gallery" class="hidden">
             <div class="gallery-grid"></div>
+            <input type="file" id="uploadPhoto" accept="image/*" multiple style="display:none;">
+            <label for="uploadPhoto" class="upload-btn">Nahrát fotky</label>
         </div>
 
         <div id="photoModal" class="hidden photo-modal">
